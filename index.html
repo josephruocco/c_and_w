@@ -1,12 +1,54 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f2efdf"><title>Chabad & Weave — Just out for a run.</title><link rel="stylesheet" href="style.css"></head>
-<body><main>
-<header><a class="wordmark" href="./">C<span>&</span>W<span class="mark">®</span></a><div class="edition">AN UNOFFICIAL BROOKLYN RUNNING CLUB<br><span>EST. JUST NOW · SINGLE PLAYER</span></div><button id="sound" class="small" aria-pressed="false">SOUND OFF ↗</button></header>
-<section class="intro"><div><div class="eyebrow"><span class="dot"></span> A VERY BROOKLYN SIDE QUEST</div><h1>CHABAD <em>&</em> WEAVE<span>™</span></h1><p>You just wanted to go for a run.</p></div><div class="stamp">PROSPECT PARK<br><strong>RUN CLUB</strong><span>EVERY PACE. ZERO SMALL TALK.</span></div></section>
-<section class="arcade" aria-label="Chabad and Weave game"><div class="scorebar"><div><span class="live-dot"></span><b id="zone">01 / THE PARK</b></div><div class="stats"><span>DISTANCE <b id="distance">0000 m</b></span><span class="focus-stat">FOCUS <b id="focus">● ● ●</b></span><span>BEST <b id="best">0000 m</b></span></div><button id="pause" aria-label="Pause game">Ⅱ</button></div>
-<div class="screen"><canvas id="game" width="1200" height="540" aria-label="Side-scrolling running game. Use arrow keys to move, space to jump and down to enter tunnels."></canvas><div id="overlay" class="overlay"><span id="overlay-tag">YOUR MORNING RUN STARTS HERE</span><h2 id="overlay-title">KEEP YOUR PACE.<br>SKIP THE CHAT.</h2><p id="overlay-text">Weave past conversations. Collect bagels.<br>Take the scenic route. Or the suspiciously scenic tunnel.</p><button id="start">LET’S RUN <span>→</span></button><small id="overlay-hint">PRESS SPACE TO START</small></div><div id="toast" role="status"></div><div class="scene-label">BROOKLYN, NY <span>40.6602° N · 73.9690° W</span></div></div>
-<div class="controlbar"><span><kbd>←</kbd><kbd>→</kbd> WEAVE</span><span><kbd>SPACE</kbd> JUMP</span><span><kbd>↓</kbd> TAKE A TUNNEL</span><span><kbd>P</kbd> PAUSE</span><span class="goal">THE PLAN? KEEP RUNNING. <span>↗</span></span></div></section>
-<div class="touch-controls"><button data-key="ArrowLeft" aria-label="Move left">←</button><button data-key="ArrowRight" aria-label="Move right">→</button><button data-key="ArrowDown">TUNNEL ↓</button><button data-key="Space">JUMP ↑</button></div>
-<section class="notes"><div><span class="num">01</span><h3>JUST PASSING THROUGH.</h3><p>A friendly question. An inconvenient time.<br>Keep your running rhythm and dodge the chat.</p></div><div><span class="num">02</span><h3>CARBS ARE CURRENCY.</h3><p>Grab a bagel. Get a little breathing room.<br>Every three restores one focus point.</p></div><div><span class="num">03</span><h3>THE PLOT GOES UNDERGROUND.</h3><p>See a hatch? Press down to take a detour.<br>Even the shortcut has small talk.</p></div></section>
-<footer><span>A LITTLE NEIGHBORHOOD ABSURDITY. A LOT OF CARDIO.</span><span>Fictional arcade satire. Unaffiliated with Chabad. Tunnels are pure game fantasy.</span></footer>
-</main><script src="game.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111813">
+  <title>Chabad & Weave</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="arcade" aria-label="Chabad and Weave game">
+    <div class="screen">
+      <canvas id="game" width="1200" height="540" aria-label="Running game. Arrows move, Space jumps, Down enters tunnels, P pauses."></canvas>
+      <div class="scorebar">
+        <div class="location"><b id="zone">PROSPECT PARK</b></div>
+        <div class="stats">
+          <span>RUN <b id="distance">0000 m</b></span>
+          <span>FOCUS <b id="focus">● ● ●</b></span>
+          <span>BEST <b id="best">0000 m</b></span>
+        </div>
+        <div class="menu-controls">
+          <button id="sound" aria-pressed="false" aria-label="Enable sound">SOUND OFF</button>
+          <button id="pause" aria-label="Pause game">Ⅱ</button>
+        </div>
+      </div>
+      <div id="overlay" class="overlay">
+        <span id="overlay-tag">CHABAD & WEAVE</span>
+        <h1 id="overlay-title">CHABAD<br><span>& WEAVE</span></h1>
+        <p id="overlay-text">Keep running. Don’t get stopped.</p>
+        <button id="start">START RUN</button>
+        <small id="overlay-hint">PRESS SPACE</small>
+      </div>
+      <div id="conversation" class="conversation hidden" role="dialog" aria-modal="true" aria-labelledby="conversation-question">
+        <p id="conversation-question">Are you Jewish?</p>
+        <button id="decline">Respectfully decline</button>
+      </div>
+      <div id="toast" role="status"></div>
+      <div class="controlbar" aria-label="Keyboard controls">
+        <span><kbd>← →</kbd> MOVE</span>
+        <span><kbd>SPACE</kbd> JUMP</span>
+        <span><kbd>↓</kbd> TUNNEL</span>
+        <span><kbd>P</kbd> PAUSE</span>
+      </div>
+    </div>
+    <div class="touch-controls" aria-label="Touch controls">
+      <button data-key="ArrowLeft" aria-label="Move left">←</button>
+      <button data-key="ArrowRight" aria-label="Move right">→</button>
+      <button data-key="ArrowDown" aria-label="Enter tunnel">↓</button>
+      <button data-key="Space">JUMP</button>
+    </div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
