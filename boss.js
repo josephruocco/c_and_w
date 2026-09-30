@@ -60,7 +60,7 @@ function winBoss() {
   keys.clear();
   best = Math.max(best, distance);
   try { localStorage.setItem('cw-best', String(Math.floor(best))); } catch {}
-  overlay('', 'RUN COMPLETE', 'MOSHIAH RV avoided. You finally get some peace.', 'RUN AGAIN');
+  overlay('', 'RUN COMPLETE', 'All five RV charges dodged. Nice running.', 'RUN AGAIN');
   tone(880, .4);
   hud();
 }

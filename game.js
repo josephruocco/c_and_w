@@ -63,7 +63,7 @@ function drawCloud(c){
     for(let i=0;i<7;i++)rect(gx-36+i*12,y-88,3,66,'#e1c879');
     rect(gx-4,y-134,8,27,'#fff5c8');rect(gx-13,y-126,26,6,'#fff5c8');
     text('PEARLY GATES',gx,y-153,13,'#fff3bf','center');
-    text(usedRefuges.has(c.id)?'REST STOP':'12 SECONDS OF PEACE',gx,y+39,10,'#fff3bf','center');
+    text(usedRefuges.has(c.id)?'REST STOP':'12 SECONDS OF IMMUNITY',gx,y+39,10,'#fff3bf','center');
   }
 }
 function draw(){
