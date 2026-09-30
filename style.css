@@ -192,3 +192,6 @@ kbd { font: inherit; font-weight: bold; }
   box-shadow: 3px 3px #16281e;
 }
 #decline:hover { background: #456644; }
+
+#practice { margin-top: 1cqw; color: #fff1c7; background: #263d30; border: 1px solid #b9c7a6; padding: .5cqw 1cqw; font-size: clamp(9px, .9cqw, 14px); }
+#practice.hidden { display: none; }

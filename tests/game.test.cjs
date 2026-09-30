@@ -7,6 +7,7 @@ function game(){
  const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',innerHTML:'',style:{},classList:{add(){},remove(){}},setAttribute(){},addEventListener(){}});return nodes.get(id)};
  node('game').getContext=()=>new Proxy({},{get:()=>()=>{},set:()=>true});
  const context=vm.createContext({document:{querySelector:s=>node(s.slice(1)),getElementById:node,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},Math});
+ vm.runInContext(fs.readFileSync('boss.js','utf8'),context);
  vm.runInContext(fs.readFileSync('game.js','utf8'),context);
  return code=>vm.runInContext(code,context);
 }
@@ -42,4 +43,29 @@ test('Pearly Gates immunity blocks encounters, expires, and cannot refill at sam
 test('space encounters require declining and falling returns to ground',()=>{
  const run=game();run('start();clouds.length=0;skyRoutes.clear();player.y=-800;people.push({x:player.x,y:-800,sky:true});update(0)');assert.equal(run('state'),'conversation');
  run('decline();people.length=0;clouds.length=0;player.y=420;player.vy=400;update(.05)');assert.equal(run('player.y'),430);assert.equal(run('viewY'),0);
+});
+test('RV starts at 1000 meters, with a deliberate intro even from space',()=>{
+ const run=game();run('start();distance=1000;player.y=-1000;update(.016)');assert.equal(run('state'),'bossIntro');assert.equal(run('player.y'),430);assert.equal(run('clouds.length'),0);
+ run('startBoss()');assert.equal(run('focus'),3);assert.equal(run('boss.phase'),'warning');
+ run('pause();update(.5)');assert.equal(run('boss.timer'),2.2);
+});
+test('RV collision hurts once per pass, never opens conversation, and loss can retry',()=>{
+ const run=game();run("start();introduceBoss();startBoss();boss.phase='charge';boss.x=player.x;update(0)");assert.equal(run('focus'),2);assert.equal(run('state'),'running');run('update(0)');assert.equal(run('focus'),2);
+ run('focus=1;boss.hit=false;update(0)');assert.equal(run('state'),'over');run("action('Space')");assert.equal(run('focus'),3);assert.equal(run('boss.dodges'),0);assert.equal(run('state'),'running');
+});
+test('five timed jumps beat alternating RV charges without damage',()=>{
+ const run=game();run('start();introduceBoss();startBoss()');
+ run(`for(let i=0;i<6000&&state==='running';i++){
+   const speed=700+boss.dodges*65;
+   if(boss.phase==='charge'&&player.grounded&&Math.abs(boss.x-player.x)<speed*.29+110)jump();
+   update(1/120);
+ }`);
+ assert.equal(run('state'),'won');assert.equal(run('focus'),3);assert.equal(run('boss.dodges'),5);
+ run("action('Space')");assert.equal(run('boss.active'),false);assert.equal(run('distance'),0);
+});
+test('double jump flips once per landing and resets on cloud and boss ground',()=>{
+ const run=game();run('start();jump();update(.1);jump()');assert.equal(run('player.vy'),-640);assert.equal(run('player.airJump'),false);assert.equal(run('player.flip'),.5);
+ run('player.vy=50;jump()');assert.equal(run('player.vy'),50);
+ run('clouds.length=0;clouds.push({x:camera+player.x-50,y:330,w:170});player.y=320;player.vy=200;update(.05)');assert.equal(run('player.airJump'),true);assert.equal(run('player.flip'),0);
+ run('introduceBoss();startBoss();jump();update(.1);jump()');assert.equal(run('player.airJump'),false);run('player.y=429;player.vy=100;update(.02)');assert.equal(run('player.airJump'),true);
 });
