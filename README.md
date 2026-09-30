@@ -8,7 +8,7 @@ Run `python3 -m http.server 5173` here and open http://localhost:5173. You can a
 
 - Left/right or A/D: turn around and run left or right. You keep running in your selected direction; distance counts travel in either direction.
 - Space, up, or W: jump from the ground or a cloud; hold to jump again on landing; Space also starts/restarts/resumes.
-- Press Jump again in midair for a double-jump flip. One air boost per landing; works in the park, clouds, tunnels, and RV arena. Holding Jump still automatically jumps on landing and does not spend the midair flip.
+- Press Jump again in midair for a double-jump barrel roll. One air boost per landing; works in the park, clouds, tunnels, and RV arena. Holding Jump still automatically jumps on landing and does not spend the midair flip.
 - Down or S: enter a nearby hatch while on the ground.
 - P or Escape: pause. Switching away pauses automatically.
 - Touch controls are provided on touch devices.

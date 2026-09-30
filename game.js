@@ -26,7 +26,7 @@ function jump(){
   if(player.grounded){
     player.grounded=false;player.vy=-720;tone(480);
   }else if(player.airJump){
-    player.airJump=false;player.vy=-640;player.flip=.5;tone(760,.14);
+    player.airJump=false;player.vy=-640;player.flip=.5;tone(760,.14);toast('DO A BARREL ROLL!');
   }
 }
 function enter(){if(state!=='running'||boss.active)return;const h=hatches.find(h=>Math.abs(h.x-camera-player.x)<68);if(!h||player.y<GROUND-10)return;zone=zone==='park'?'tunnel':'park';clouds.length=0;skyRoutes.clear();viewY=0;people.length=0;pickups.length=0;hatches.length=0;loadedBlocks.clear();tunnelTravel=0;spawnAt=camera+500;hatchAt=camera+1000;tunnelUntil=zone==='tunnel'?camera+2500:0;invincible=1.2;toast(zone==='tunnel'?'UNDERGROUND':'PROSPECT PARK');tone(210,.2);hud()}
@@ -84,7 +84,7 @@ for(const p of people){
 }
 if(state==='ready'){person(880,GROUND-23);rect(808,GROUND-120,144,27,'#f4efdb');text('Are you Jewish?',880,GROUND-102,12,colors.ink,'center')}
 drawBoss();
-if(invincible<=0||Math.floor(tick*13)%2===0){ctx.save();ctx.translate(player.x,player.y-30);ctx.scale(direction,1);if(player.flip>0)ctx.rotate((1-player.flip/.5)*Math.PI*2);runner(0,30);ctx.restore();}
+if(invincible<=0||Math.floor(tick*13)%2===0){ctx.save();ctx.translate(player.x,player.y-30);ctx.scale(direction,1);if(player.flip>0){const c=Math.cos((1-player.flip/.5)*Math.PI*2);ctx.scale(1,Math.sign(c||1)*Math.max(.12,Math.abs(c)))}runner(0,30);ctx.restore();}
 if(grace>0){ctx.strokeStyle='#ffe39a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(player.x,player.y-79,19,6,0,0,Math.PI*2);ctx.stroke()}
 ctx.restore();
 drawBossHud();
