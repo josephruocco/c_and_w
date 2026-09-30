@@ -26,7 +26,7 @@ function drawLevelProgress(){
   text(`LEVEL ${level}/4 · ${LEVEL_NAMES[level-1]}`,24,516,11,'#fff1ce');
   text(`${Math.max(0,Math.ceil(level*LEVEL_LENGTH-distance))}m TO ${level===4?'FINAL BOSS':'LEVEL '+(level+1)}`,W-24,516,11,'#fff1ce','right');
 }
-const player={x:230,y:GROUND,vy:0,grounded:true,airJump:true,flip:0};
+const player={x:230,y:GROUND,vy:0,grounded:true,airJump:true,flip:0,climbing:false};
 const colors={ink:'#233d32',skin:'#d9a17c',orange:'#e56b3f'};
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h)}
 function text(s,x,y,size,color,align='left'){ctx.fillStyle=color;ctx.font=`bold ${size}px monospace`;ctx.textAlign=align;ctx.fillText(s,x,y)}
@@ -34,7 +34,7 @@ function tone(freq,duration=.09){if(!sound)return;try{audio??=new(window.AudioCo
 let toastTimer;
 function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.opacity=0,2200)}
 function hud(){$('distance').textContent=String(Math.floor(distance)).padStart(4,'0')+' m';$('best').textContent=String(Math.floor(best)).padStart(4,'0')+' m';$('focus').textContent='● '.repeat(focus)+'○ '.repeat(3-focus);$('zone').textContent=boss.active?'FINAL BOSS':`L${level} · `+(zone==='tunnel'?'UNDERGROUND':grace>0?'PEARLY GATES':player.y< -600?'OUTER SPACE':player.y<200?'CLOUD ROUTE':'PROSPECT PARK')}
-function start(){cloudSeed=Math.floor(Math.random()*1000000);player.platform=null;level=1;boss.active=false;boss.phase='warning';$('practice').classList.add('hidden');state='running';zone='park';direction=1;tunnelTravel=0;viewY=0;grace=0;clouds.length=0;skyRoutes.clear();usedRefuges.clear();loadedBlocks.clear();distance=0;camera=0;focus=3;bagels=0;tick=0;invincible=0;tunnelUntil=0;spawnAt=550;hatchAt=1000;people.length=pickups.length=hatches.length=0;player.x=230;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;populateSky();$('overlay').classList.add('hidden');$('conversation').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();tone(360)}
+function start(){cloudSeed=Math.floor(Math.random()*1000000);player.platform=null;player.climbing=false;level=1;boss.active=false;boss.phase='warning';$('practice').classList.add('hidden');state='running';zone='park';direction=1;tunnelTravel=0;viewY=0;grace=0;clouds.length=0;skyRoutes.clear();usedRefuges.clear();loadedBlocks.clear();distance=0;camera=0;focus=3;bagels=0;tick=0;invincible=0;tunnelUntil=0;spawnAt=550;hatchAt=1000;people.length=pickups.length=hatches.length=0;player.x=230;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;populateSky();$('overlay').classList.add('hidden');$('conversation').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();tone(360)}
 function overlay(tag,title,body,button){$('overlay-tag').textContent=tag;$('overlay-title').innerHTML=title;$('overlay-text').textContent=body;$('start').textContent=button;$('overlay-hint').textContent='PRESS SPACE';$('overlay').classList.remove('hidden')}
 function pause(){if(state==='running'){state='paused';keys.clear();overlay('','PAUSED','','RESUME');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game')}else if(state==='paused'){state='running';$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game')}}
 function end(){state='over';best=Math.max(best,distance);try{localStorage.setItem('cw-best',String(Math.floor(best)))}catch{}hud();overlay('','RUN OVER',`${Math.floor(distance)} m · ${bagels} bagels`,'TRY AGAIN');tone(150,.25)}
@@ -73,7 +73,7 @@ function drawCloud(c){
   rect(x,y,c.w,13,base);rect(x+12,y-13,c.w-24,13,'#f7f4e2');
   rect(x+30,y-23,35,12,'#f7f4e2');rect(x+c.w-70,y-20,42,12,'#f7f4e2');
   rect(x+10,y+13,c.w-20,7,viewY< -600?'#7287b0':'#b1cad9');
-  if(c.step===0){text('HOLD JUMP ↑',x+c.w/2,y-40,12,'#294936','center')}
+  if(c.step===0){text('CLIMB ↑ · DOUBLE JUMP',x+c.w/2,y-40,12,'#294936','center')}
   if(c.refuge){
     const gx=x+c.w/2;
     rect(gx-48,y-95,8,72,'#f9df8a');rect(gx+40,y-95,8,72,'#f9df8a');
@@ -114,17 +114,18 @@ if(state==='running'){
 }
 function populateSky(){
   if(zone==='tunnel')return;
-  const center=Math.floor((camera+player.x)/5200);
+  const center=Math.floor((camera+player.x)/2400);
   for(let route=center-1;route<=center+1;route++){
     if(skyRoutes.has(route))continue;
     skyRoutes.add(route);
     for(const side of [-1,1]){
-      let reach=220, height=335;
+      const anchor=route*2400+230+side*300;
+      let height=335;
       for(let step=0;step<17;step++){
         const n=route*101+side*43+step*7,refuge=step===14;
-        if(step){reach+=128+cloudRandom(n)*32;height-=78+cloudRandom(n+1)*18}
+        if(step)height-=105+cloudRandom(n+1)*45;
         const w=refuge?270:155+Math.floor(cloudRandom(n+2)*40);
-        const x=route*5200+230+side*reach-(side<0?w:0),y=height,id=`${route}:${side}:${step}`;
+        const x=anchor+(step?(cloudRandom(n)*2-1)*120:0)-w/2,y=height,id=`${route}:${side}:${step}`;
         const motion=step===0||refuge?0:Math.floor(cloudRandom(n+3)*3);
         const c={x,y,w,refuge,id,step,baseX:x,baseY:y,previousY:y,
           amplitudeX:motion===1?14+cloudRandom(n+4)*12:0,
@@ -159,13 +160,13 @@ function landOnClouds(previousY){
   if(player.vy>=0&&zone!=='tunnel'){
     const landed=clouds.filter(c=>worldX>=c.x-8&&worldX<=c.x+c.w+8&&previousY<=(support===c?c.y:(c.previousY??c.y))+.01&&player.y>=c.y).sort((a,b)=>a.y-b.y)[0];
     if(landed){
-      player.platform=landed;player.y=landed.y;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;
+      player.climbing=true;player.platform=landed;player.y=landed.y;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;
       if(landed.refuge&&!usedRefuges.has(landed.id)){
         usedRefuges.add(landed.id);grace=12;toast('PEARLY GATES · 12 seconds of immunity');tone(850,.2);
       }
     }
   }
-  if(player.y>=GROUND){player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0}
+  if(player.y>=GROUND){player.climbing=false;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0}
 }
 function populateGround(){
   const center=Math.floor((camera+player.x)/900);
@@ -188,8 +189,11 @@ function update(dt){
   if(keys.has('ArrowLeft')||keys.has('KeyA'))direction=-1;
   if(keys.has('ArrowRight')||keys.has('KeyD'))direction=1;
   const speed=runningSpeed();
-  camera+=direction*speed*dt;
-  distance+=speed*dt/10;
+  // In cloud clusters, release the arrows to stay above a platform.
+  const steering=Number(keys.has('ArrowRight')||keys.has('KeyD'))-Number(keys.has('ArrowLeft')||keys.has('KeyA'));
+  const travel=(player.climbing?steering*280:direction*speed)*dt;
+  camera+=travel;
+  distance+=Math.abs(travel)/10;
   updateLevel();
   invincible=Math.max(0,invincible-dt);
   grace=Math.max(0,grace-dt);
@@ -198,6 +202,7 @@ function update(dt){
   const previousY=player.y;
   player.vy+=1900*dt;player.y+=player.vy*dt;
   landOnClouds(previousY);
+  if(player.climbing)distance+=Math.max(0,previousY-player.y)/10;
   viewY=zone==='tunnel'?0:Math.min(0,player.y-250);
   if(zone==='tunnel'){
     tunnelTravel+=speed*dt;

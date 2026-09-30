@@ -28,11 +28,19 @@ test('clouds are one-way platforms and allow jumping again',()=>{
  assert.equal(run('player.y'),330);assert.equal(run('player.grounded'),true);run('jump()');assert.ok(run('player.vy')<0);
  run('player.y=355;player.vy=-400;update(.05)');assert.ok(run('player.y')<355);assert.equal(run('player.grounded'),false);
 });
-test('holding jump can climb generated clouds into space in either direction',()=>{
- for(const dir of [1,-1]){
-  const run=game();run(`start();direction=${dir};keys.add('Space');`);
-  const highest=run("(()=>{let y=GROUND;for(let i=0;i<1500;i++){if(state==='conversation'){decline();keys.add('Space')}if(state==='over')break;update(1/60);y=Math.min(y,player.y)}return y})()");
-  assert.ok(highest< -600,`direction ${dir}, highest ${highest}`);
+test('vertical cloud clusters are climbable with steering and double jumps',()=>{
+ for(const seed of [1,9,25])for(const side of [-1,1]){
+  const run=game();run(`start();cloudSeed=${seed};clouds.length=0;people.length=0;pickups.length=0;skyRoutes.clear();populateSky();
+   const first=clouds.find(c=>c.id==='0:${side}:0');camera=first.x+first.w/2-player.x;player.y=first.y;player.platform=first;player.climbing=true;`);
+  const highest=run(`(()=>{let highest=player.y,target=1;for(let i=0;i<3000&&state==='running';i++){
+   if(player.grounded&&player.platform)target=Math.max(target,player.platform.step+1);
+   const next=clouds.find(c=>c.id==='0:${side}:'+target);if(!next)break;
+   keys.clear();const dx=next.x+next.w/2-(camera+player.x);
+   if(Math.abs(dx)>8)keys.add(dx>0?'ArrowRight':'ArrowLeft');
+   if(player.grounded)jump();else if(player.airJump&&player.vy>-40&&player.y>next.y-20)jump();
+   update(1/120);highest=Math.min(highest,player.y);if(highest< -700)break;
+  }return highest})()`);
+  assert.ok(highest< -700,`seed ${seed}, side ${side}, height ${highest}`);
  }
 });
 test('Pearly Gates immunity blocks encounters, expires, and cannot refill at same gate',()=>{
@@ -95,7 +103,7 @@ test('cloud patterns are repeatable within a seed, varied across seeds, and boun
   route(seed);
   assert.ok(run('clouds.some(c=>c.amplitudeX>0)'));assert.ok(run('clouds.some(c=>c.amplitudeY>0)'));
   assert.ok(run('clouds.every(c=>c.step!==0&&!c.refuge||(!c.amplitudeX&&!c.amplitudeY))'));
-  assert.ok(run(`clouds.every(c=>{if(c.step===0)return true;const prev=clouds.find(p=>p.id===c.id.replace(/[^:]+$/,String(c.step-1)));return prev.baseY-c.baseY+prev.amplitudeY+c.amplitudeY<136})`));
+  assert.ok(run(`clouds.every(c=>{if(c.step===0)return true;const prev=clouds.find(p=>p.id===c.id.replace(/[^:]+$/,String(c.step-1)));return prev.baseY-c.baseY+prev.amplitudeY+c.amplitudeY<220})`));
  }
 });
 
@@ -107,4 +115,11 @@ test('RV entry side is independent each pass and has no advance visual or sound 
  run("let labels=[];text=(label)=>labels.push(label);drawBossHud()");
  assert.equal(run("labels.some(label=>/INCOMING|ROOF|←|→/.test(label))"),false);
  assert.equal(run('boss.x'),1420);
+});
+
+test('clouds stay vertically clustered and movement stops when arrows are released',()=>{
+ const run=game();run('start()');
+ assert.ok(run("(()=>{const route=clouds.filter(c=>c.id.startsWith('0:1:'));return Math.max(...route.map(c=>c.baseX+c.w/2))-Math.min(...route.map(c=>c.baseX+c.w/2))<241})()"));
+ run('player.climbing=true;player.y=-300;player.grounded=false;camera=0;update(.01)');assert.equal(run('camera'),0);
+ run("keys.add('ArrowRight');update(.01)");assert.ok(run('camera')>0);
 });
