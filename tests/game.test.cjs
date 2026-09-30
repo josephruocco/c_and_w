@@ -21,3 +21,25 @@ test('left reverses world travel and score still increases; right turns back',()
  run("keys.clear();keys.add('ArrowRight');update(.1)");assert.equal(run('direction'),1);assert.ok(run('camera')>0);
 });
 test('tunnel returns to park while running left',()=>{const run=game();run("start();hatches.push({x:player.x});enter();direction=-1;tunnelTravel=2499;update(.02)");assert.equal(run('zone'),'park')});
+test('clouds are one-way platforms and allow jumping again',()=>{
+ const run=game();run("start();clouds.length=0;clouds.push({x:200,y:330,w:170});player.y=320;player.vy=200;update(.05)");
+ assert.equal(run('player.y'),330);assert.equal(run('player.grounded'),true);run('jump()');assert.ok(run('player.vy')<0);
+ run('player.y=355;player.vy=-400;update(.05)');assert.ok(run('player.y')<355);assert.equal(run('player.grounded'),false);
+});
+test('holding jump can climb generated clouds into space in either direction',()=>{
+ for(const dir of [1,-1]){
+  const run=game();run(`start();direction=${dir};keys.add('Space');`);
+  const highest=run("(()=>{let y=GROUND;for(let i=0;i<1500;i++){if(state==='conversation'){decline();keys.add('Space')}if(state==='over')break;update(1/60);y=Math.min(y,player.y)}return y})()");
+  assert.ok(highest< -600,`direction ${dir}, highest ${highest}`);
+ }
+});
+test('Pearly Gates immunity blocks encounters, expires, and cannot refill at same gate',()=>{
+ const run=game();run("start();clouds.length=0;clouds.push({x:200,y:-800,w:270,refuge:true,id:'gate'});player.y=-810;player.vy=200;update(.05)");
+ assert.equal(run('grace'),12);assert.equal(run('player.y'),-800);
+ run("people.push({x:camera+player.x,y:-800,sky:true});update(0)");assert.equal(run('state'),'running');assert.equal(run('focus'),3);
+ run('grace=.01;update(.02)');assert.equal(run('grace'),0);assert.equal(run('state'),'conversation');
+});
+test('space encounters require declining and falling returns to ground',()=>{
+ const run=game();run('start();clouds.length=0;skyRoutes.clear();player.y=-800;people.push({x:player.x,y:-800,sky:true});update(0)');assert.equal(run('state'),'conversation');
+ run('decline();people.length=0;clouds.length=0;player.y=420;player.vy=400;update(.05)');assert.equal(run('player.y'),430);assert.equal(run('viewY'),0);
+});
