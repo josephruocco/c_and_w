@@ -69,3 +69,12 @@ test('double jump flips once per landing and resets on cloud and boss ground',()
  run('clouds.length=0;clouds.push({x:camera+player.x-50,y:330,w:170});player.y=320;player.vy=200;update(.05)');assert.equal(run('player.airJump'),true);assert.equal(run('player.flip'),0);
  run('introduceBoss();startBoss();jump();update(.1);jump()');assert.equal(run('player.airJump'),false);run('player.y=429;player.vy=100;update(.02)');assert.equal(run('player.airJump'),true);
 });
+test('levels advance every 250m, reward focus once, and smoothly increase speed',()=>{
+ const run=game();run('start()');assert.equal(run('runningSpeed()'),225);
+ run('focus=1;distance=249;updateLevel()');assert.equal(run('level'),1);assert.equal(run('focus'),1);
+ run('distance=250;updateLevel()');assert.equal(run('level'),2);assert.equal(run('focus'),2);run('updateLevel()');assert.equal(run('focus'),2);
+ run('distance=500;updateLevel()');assert.equal(run('level'),3);assert.equal(run('focus'),3);
+ run('distance=750;updateLevel()');assert.equal(run('level'),4);assert.equal(run('runningSpeed()'),303.75);
+ run('distance=1000;update(.016)');assert.equal(run('state'),'bossIntro');assert.equal(run('runningSpeed()'),330);
+ run('start()');assert.equal(run('level'),1);
+});

@@ -8,6 +8,22 @@ const keys=new Set(), people=[], pickups=[], hatches=[];
 let direction=1, tunnelTravel=0, viewY=0, grace=0;
 const clouds=[], skyRoutes=new Set(), usedRefuges=new Set();
 const loadedBlocks=new Set();
+const LEVEL_LENGTH=250;
+const LEVEL_NAMES=['WARM-UP','PICKING UP PACE','FULL STRIDE','FINAL STRETCH'];
+let level=1;
+function runningSpeed(){return 225+Math.min(distance*.105,105)}
+function updateLevel(){
+  const next=Math.min(4,1+Math.floor(distance/LEVEL_LENGTH));
+  if(next>level){focus=Math.min(3,focus+1);toast(`LEVEL ${next} · ${LEVEL_NAMES[next-1]} · +1 FOCUS`);tone(620,.16)}
+  level=next;
+}
+function drawLevelProgress(){
+  if(state!=='running'||boss.active)return;
+  const progress=Math.min(1,(distance-(level-1)*LEVEL_LENGTH)/LEVEL_LENGTH);
+  rect(24,494,W-48,5,'#405942');rect(24,494,(W-48)*progress,5,'#f5d67d');
+  text(`LEVEL ${level}/4 · ${LEVEL_NAMES[level-1]}`,24,516,11,'#fff1ce');
+  text(`${Math.max(0,Math.ceil(level*LEVEL_LENGTH-distance))}m TO ${level===4?'FINAL BOSS':'LEVEL '+(level+1)}`,W-24,516,11,'#fff1ce','right');
+}
 const player={x:230,y:GROUND,vy:0,grounded:true,airJump:true,flip:0};
 const colors={ink:'#233d32',skin:'#d9a17c',orange:'#e56b3f'};
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h)}
@@ -15,8 +31,8 @@ function text(s,x,y,size,color,align='left'){ctx.fillStyle=color;ctx.font=`bold 
 function tone(freq,duration=.09){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration)}catch{}}
 let toastTimer;
 function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.opacity=0,2200)}
-function hud(){$('distance').textContent=String(Math.floor(distance)).padStart(4,'0')+' m';$('best').textContent=String(Math.floor(best)).padStart(4,'0')+' m';$('focus').textContent='● '.repeat(focus)+'○ '.repeat(3-focus);$('zone').textContent=boss.active?'FINAL BOSS':zone==='tunnel'?'UNDERGROUND':grace>0?'PEARLY GATES':player.y< -600?'OUTER SPACE':player.y<200?'CLOUD ROUTE':'PROSPECT PARK'}
-function start(){boss.active=false;boss.phase='warning';$('practice').classList.add('hidden');state='running';zone='park';direction=1;tunnelTravel=0;viewY=0;grace=0;clouds.length=0;skyRoutes.clear();usedRefuges.clear();loadedBlocks.clear();distance=0;camera=0;focus=3;bagels=0;tick=0;invincible=0;tunnelUntil=0;spawnAt=550;hatchAt=1000;people.length=pickups.length=hatches.length=0;player.x=230;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;populateSky();$('overlay').classList.add('hidden');$('conversation').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();tone(360)}
+function hud(){$('distance').textContent=String(Math.floor(distance)).padStart(4,'0')+' m';$('best').textContent=String(Math.floor(best)).padStart(4,'0')+' m';$('focus').textContent='● '.repeat(focus)+'○ '.repeat(3-focus);$('zone').textContent=boss.active?'FINAL BOSS':`L${level} · `+(zone==='tunnel'?'UNDERGROUND':grace>0?'PEARLY GATES':player.y< -600?'OUTER SPACE':player.y<200?'CLOUD ROUTE':'PROSPECT PARK')}
+function start(){level=1;boss.active=false;boss.phase='warning';$('practice').classList.add('hidden');state='running';zone='park';direction=1;tunnelTravel=0;viewY=0;grace=0;clouds.length=0;skyRoutes.clear();usedRefuges.clear();loadedBlocks.clear();distance=0;camera=0;focus=3;bagels=0;tick=0;invincible=0;tunnelUntil=0;spawnAt=550;hatchAt=1000;people.length=pickups.length=hatches.length=0;player.x=230;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;populateSky();$('overlay').classList.add('hidden');$('conversation').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();tone(360)}
 function overlay(tag,title,body,button){$('overlay-tag').textContent=tag;$('overlay-title').innerHTML=title;$('overlay-text').textContent=body;$('start').textContent=button;$('overlay-hint').textContent='PRESS SPACE';$('overlay').classList.remove('hidden')}
 function pause(){if(state==='running'){state='paused';keys.clear();overlay('','PAUSED','','RESUME');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game')}else if(state==='paused'){state='running';$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game')}}
 function end(){state='over';best=Math.max(best,distance);try{localStorage.setItem('cw-best',String(Math.floor(best)))}catch{}hud();overlay('','RUN OVER',`${Math.floor(distance)} m · ${bagels} bagels`,'TRY AGAIN');tone(150,.25)}
@@ -87,7 +103,7 @@ drawBoss();
 if(invincible<=0||Math.floor(tick*13)%2===0){ctx.save();ctx.translate(player.x,player.y-30);ctx.scale(direction,1);if(player.flip>0){const c=Math.cos((1-player.flip/.5)*Math.PI*2);ctx.scale(1,Math.sign(c||1)*Math.max(.12,Math.abs(c)))}runner(0,30);ctx.restore();}
 if(grace>0){ctx.strokeStyle='#ffe39a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(player.x,player.y-79,19,6,0,0,Math.PI*2);ctx.stroke()}
 ctx.restore();
-drawBossHud();
+drawBossHud();drawLevelProgress();
 if(state==='running'){
   text(`BAGELS ${bagels}`,24,90,12,viewY< -200||zone==='tunnel'?'#ede7ce':colors.ink);
   text(player.airJump?'FLIP READY':'FLIP USED',24,108,10,viewY< -200||zone==='tunnel'?'#ede7ce':colors.ink);
@@ -146,9 +162,10 @@ function update(dt){
   player.flip=Math.max(0,player.flip-dt);
   if(keys.has('ArrowLeft')||keys.has('KeyA'))direction=-1;
   if(keys.has('ArrowRight')||keys.has('KeyD'))direction=1;
-  const speed=225+Math.min(distance*.035,90);
+  const speed=runningSpeed();
   camera+=direction*speed*dt;
   distance+=speed*dt/10;
+  updateLevel();
   invincible=Math.max(0,invincible-dt);
   grace=Math.max(0,grace-dt);
   populateGround();populateSky();

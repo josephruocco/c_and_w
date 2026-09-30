@@ -19,6 +19,10 @@ Run `python3 -m http.server 5173` here and open http://localhost:5173. You can a
 - Tunnels return to the park automatically, or use an exit hatch.
 - Best distance is saved on this browser when storage is available. Sound is opt-in.
 
+## Levels and pace
+
+Four 250-meter levels lead to the finale: Warm-up, Picking Up Pace, Full Stride, and Final Stretch. Speed rises smoothly from 225 to 330 pixels per second over the 1,000-meter run. Each new level restores one focus point, up to three. A progress bar shows the distance to the next level or boss; reversing direction still counts toward progress.
+
 ## Final boss
 
 At 1,000 meters, the run moves to the MOSHIAH RV arena. Focus resets to three for the fight. Dodge five charges to win; the RV alternates sides and speeds up after each successful dodge. A collision costs one focus point and that pass does not count. Arrows move within the arena and Space jumps over the roof. There are no conversation popups during the boss. Pause works normally, and losing lets you retry the boss directly. Use **Practice Boss** on the title screen to try it immediately.
