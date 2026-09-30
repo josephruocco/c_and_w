@@ -3,10 +3,11 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 function game(){
+ const testMath=Object.create(Math);testMath.random=()=>.12345;
  const nodes=new Map();
  const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',innerHTML:'',style:{},classList:{add(){},remove(){}},setAttribute(){},addEventListener(){}});return nodes.get(id)};
  node('game').getContext=()=>new Proxy({},{get:()=>()=>{},set:()=>true});
- const context=vm.createContext({document:{querySelector:s=>node(s.slice(1)),getElementById:node,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},Math});
+ const context=vm.createContext({document:{querySelector:s=>node(s.slice(1)),getElementById:node,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},Math:testMath});
  vm.runInContext(fs.readFileSync('boss.js','utf8'),context);
  vm.runInContext(fs.readFileSync('game.js','utf8'),context);
  return code=>vm.runInContext(code,context);
@@ -77,4 +78,23 @@ test('levels advance every 250m, reward focus once, and smoothly increase speed'
  run('distance=750;updateLevel()');assert.equal(run('level'),4);assert.equal(run('runningSpeed()'),303.75);
  run('distance=1000;update(.016)');assert.equal(run('state'),'bossIntro');assert.equal(run('runningSpeed()'),330);
  run('start()');assert.equal(run('level'),1);
+});
+test('moving clouds carry the runner, outreach characters, and bagels',()=>{
+ const run=game();run(`start();clouds.length=0;people.length=0;pickups.length=0;
+ const platform={x:200,y:330,baseX:200,baseY:330,w:170,amplitudeX:20,amplitudeY:12,frequency:1,phase:0};
+ clouds.push(platform);player.platform=platform;player.grounded=true;player.y=330;
+ people.push({platform,x:285,y:330});pickups.push({platform,x:285,y:275});tick=Math.PI/2;moveClouds();`);
+ assert.equal(run('camera'),20);assert.equal(run('player.y'),342);assert.equal(run('people[0].x'),305);assert.equal(run('pickups[0].y'),287);
+ run('player.y+=1;player.vy=20;landOnClouds(342)');assert.equal(run('player.grounded'),true);assert.equal(run('player.y'),342);
+ run('jump()');assert.equal(run('player.platform'),null);
+});
+test('cloud patterns are repeatable within a seed, varied across seeds, and bounded',()=>{
+ const run=game();const route=seed=>run(`cloudSeed=${seed};clouds.length=0;people.length=0;pickups.length=0;skyRoutes.clear();populateSky();JSON.stringify(clouds)`);
+ assert.equal(route(9),route(9));assert.notEqual(route(9),route(10));
+ for(let seed=0;seed<30;seed++){
+  route(seed);
+  assert.ok(run('clouds.some(c=>c.amplitudeX>0)'));assert.ok(run('clouds.some(c=>c.amplitudeY>0)'));
+  assert.ok(run('clouds.every(c=>c.step!==0&&!c.refuge||(!c.amplitudeX&&!c.amplitudeY))'));
+  assert.ok(run(`clouds.every(c=>{if(c.step===0)return true;const prev=clouds.find(p=>p.id===c.id.replace(/[^:]+$/,String(c.step-1)));return prev.baseY-c.baseY+prev.amplitudeY+c.amplitudeY<136})`));
+ }
 });

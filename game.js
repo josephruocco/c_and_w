@@ -8,6 +8,8 @@ const keys=new Set(), people=[], pickups=[], hatches=[];
 let direction=1, tunnelTravel=0, viewY=0, grace=0;
 const clouds=[], skyRoutes=new Set(), usedRefuges=new Set();
 const loadedBlocks=new Set();
+let cloudSeed=1;
+function cloudRandom(n){const v=Math.sin(n*127.1+cloudSeed*311.7)*43758.5453;return v-Math.floor(v)}
 const LEVEL_LENGTH=250;
 const LEVEL_NAMES=['WARM-UP','PICKING UP PACE','FULL STRIDE','FINAL STRETCH'];
 let level=1;
@@ -32,7 +34,7 @@ function tone(freq,duration=.09){if(!sound)return;try{audio??=new(window.AudioCo
 let toastTimer;
 function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.opacity=0,2200)}
 function hud(){$('distance').textContent=String(Math.floor(distance)).padStart(4,'0')+' m';$('best').textContent=String(Math.floor(best)).padStart(4,'0')+' m';$('focus').textContent='● '.repeat(focus)+'○ '.repeat(3-focus);$('zone').textContent=boss.active?'FINAL BOSS':`L${level} · `+(zone==='tunnel'?'UNDERGROUND':grace>0?'PEARLY GATES':player.y< -600?'OUTER SPACE':player.y<200?'CLOUD ROUTE':'PROSPECT PARK')}
-function start(){level=1;boss.active=false;boss.phase='warning';$('practice').classList.add('hidden');state='running';zone='park';direction=1;tunnelTravel=0;viewY=0;grace=0;clouds.length=0;skyRoutes.clear();usedRefuges.clear();loadedBlocks.clear();distance=0;camera=0;focus=3;bagels=0;tick=0;invincible=0;tunnelUntil=0;spawnAt=550;hatchAt=1000;people.length=pickups.length=hatches.length=0;player.x=230;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;populateSky();$('overlay').classList.add('hidden');$('conversation').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();tone(360)}
+function start(){cloudSeed=Math.floor(Math.random()*1000000);player.platform=null;level=1;boss.active=false;boss.phase='warning';$('practice').classList.add('hidden');state='running';zone='park';direction=1;tunnelTravel=0;viewY=0;grace=0;clouds.length=0;skyRoutes.clear();usedRefuges.clear();loadedBlocks.clear();distance=0;camera=0;focus=3;bagels=0;tick=0;invincible=0;tunnelUntil=0;spawnAt=550;hatchAt=1000;people.length=pickups.length=hatches.length=0;player.x=230;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;populateSky();$('overlay').classList.add('hidden');$('conversation').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();tone(360)}
 function overlay(tag,title,body,button){$('overlay-tag').textContent=tag;$('overlay-title').innerHTML=title;$('overlay-text').textContent=body;$('start').textContent=button;$('overlay-hint').textContent='PRESS SPACE';$('overlay').classList.remove('hidden')}
 function pause(){if(state==='running'){state='paused';keys.clear();overlay('','PAUSED','','RESUME');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game')}else if(state==='paused'){state='running';$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game')}}
 function end(){state='over';best=Math.max(best,distance);try{localStorage.setItem('cw-best',String(Math.floor(best)))}catch{}hud();overlay('','RUN OVER',`${Math.floor(distance)} m · ${bagels} bagels`,'TRY AGAIN');tone(150,.25)}
@@ -40,7 +42,7 @@ function decline(){if(state!=='conversation')return;$('conversation').classList.
 function jump(){
   if(state!=='running')return;
   if(player.grounded){
-    player.grounded=false;player.vy=-720;tone(480);
+    player.grounded=false;player.platform=null;player.vy=-720;tone(480);
   }else if(player.airJump){
     player.airJump=false;player.vy=-640;player.flip=.5;tone(760,.14);toast('DO A BARREL ROLL!');
   }
@@ -116,25 +118,48 @@ function populateSky(){
   for(let route=center-1;route<=center+1;route++){
     if(skyRoutes.has(route))continue;
     skyRoutes.add(route);
-    for(const side of [-1,1])for(let step=0;step<17;step++){
-      const refuge=step===14;
-      const x=route*5200+230+side*(220+step*140)-(side<0?170:0);
-      const y=335-step*90,id=`${route}:${side}:${step}`;
-      clouds.push({x,y,w:refuge?270:170,refuge,id,step});
-      if([10,13,16].includes(step))people.push({x:x+85,y,sky:true});
-      if(step%3===1)pickups.push({x:x+85,y:y-55});
+    for(const side of [-1,1]){
+      let reach=220, height=335;
+      for(let step=0;step<17;step++){
+        const n=route*101+side*43+step*7,refuge=step===14;
+        if(step){reach+=128+cloudRandom(n)*32;height-=78+cloudRandom(n+1)*18}
+        const w=refuge?270:155+Math.floor(cloudRandom(n+2)*40);
+        const x=route*5200+230+side*reach-(side<0?w:0),y=height,id=`${route}:${side}:${step}`;
+        const motion=step===0||refuge?0:Math.floor(cloudRandom(n+3)*3);
+        const c={x,y,w,refuge,id,step,baseX:x,baseY:y,previousY:y,
+          amplitudeX:motion===1?14+cloudRandom(n+4)*12:0,
+          amplitudeY:motion===2?10+cloudRandom(n+4)*8:0,
+          phase:cloudRandom(n+5)*Math.PI*2,frequency:.8+cloudRandom(n+6)*.5};
+        clouds.push(c);
+        if([10,13,16].includes(step))people.push({x:x+w/2,y,sky:true,platform:c});
+        if(step%3===1)pickups.push({x:x+w/2,y:y-55,platform:c});
+      }
     }
   }
   for(const route of skyRoutes)if(Math.abs(route-center)>2)skyRoutes.delete(route);
   for(let i=clouds.length-1;i>=0;i--)if(Math.abs(clouds[i].x-camera-player.x)>15000)clouds.splice(i,1);
 }
+// Move platforms before gravity, carrying a standing runner by the same delta.
+function moveClouds(){
+  for(const c of clouds){
+    const oldX=c.x,oldY=c.y;c.previousY=oldY;
+    if(c.baseX!==undefined){
+      c.x=c.baseX+Math.sin(tick*c.frequency+c.phase)*(c.amplitudeX||0);
+      c.y=c.baseY+Math.sin(tick*c.frequency+c.phase)*(c.amplitudeY||0);
+    }
+    if(player.grounded&&player.platform===c){camera+=c.x-oldX;player.y+=c.y-oldY}
+  }
+  for(const p of people)if(p.platform){p.x=p.platform.x+p.platform.w/2;p.y=p.platform.y}
+  for(const b of pickups)if(b.platform){b.x=b.platform.x+b.platform.w/2;b.y=b.platform.y-55}
+}
 function landOnClouds(previousY){
   const worldX=camera+player.x;
+  const support=player.platform;player.platform=null;
   player.grounded=false;
   if(player.vy>=0&&zone!=='tunnel'){
-    const landed=clouds.filter(c=>worldX>=c.x-8&&worldX<=c.x+c.w+8&&previousY<=c.y+.01&&player.y>=c.y).sort((a,b)=>a.y-b.y)[0];
+    const landed=clouds.filter(c=>worldX>=c.x-8&&worldX<=c.x+c.w+8&&previousY<=(support===c?c.y:(c.previousY??c.y))+.01&&player.y>=c.y).sort((a,b)=>a.y-b.y)[0];
     if(landed){
-      player.y=landed.y;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;
+      player.platform=landed;player.y=landed.y;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;
       if(landed.refuge&&!usedRefuges.has(landed.id)){
         usedRefuges.add(landed.id);grace=12;toast('PEARLY GATES · 12 seconds of immunity');tone(850,.2);
       }
@@ -168,7 +193,7 @@ function update(dt){
   updateLevel();
   invincible=Math.max(0,invincible-dt);
   grace=Math.max(0,grace-dt);
-  populateGround();populateSky();
+  populateGround();populateSky();moveClouds();
   if(player.grounded&&(keys.has('Space')||keys.has('ArrowUp')||keys.has('KeyW')))jump();
   const previousY=player.y;
   player.vy+=1900*dt;player.y+=player.vy*dt;
