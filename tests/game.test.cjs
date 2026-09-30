@@ -11,6 +11,13 @@ function game(){
  return code=>vm.runInContext(code,context);
 }
 test('run, jump, land, pause and restart',()=>{const run=game();run('start(); update(.016)');assert.equal(run('state'),'running');assert.ok(run('distance')>0);run('jump(); update(.1)');assert.ok(run('player.y')<430);run('for(let i=0;i<90;i++)update(.016)');assert.equal(run('player.y'),430);run('pause()');assert.equal(run('state'),'paused');run('pause()');assert.equal(run('state'),'running');run('start()');assert.equal(run('distance'),0)});
-test('nearby hatch enters tunnel and route returns to park',()=>{const run=game();run('start(); hatches.push({x:player.x}); enter()');assert.equal(run('zone'),'tunnel');assert.ok(run('tunnelUntil')>0);run('camera=tunnelUntil+1; update(.016)');assert.equal(run('zone'),'park')});
+test('nearby hatch enters tunnel and route returns to park',()=>{const run=game();run('start(); hatches.push({x:player.x}); enter()');assert.equal(run('zone'),'tunnel');assert.ok(run('tunnelUntil')>0);run('tunnelTravel=2501; update(.016)');assert.equal(run('zone'),'park')});
 test('collision requires declining; keyboard cannot dismiss the conversation',()=>{const run=game();run('start(); people.push({x:player.x}); update(0)');assert.equal(run('focus'),2);assert.equal(run('state'),'conversation');run("action('Space');action('KeyP');action('Escape')");assert.equal(run('state'),'conversation');run('decline()');assert.equal(run('state'),'running');run('update(0)');assert.equal(run('focus'),2);run('invincible=0;update(0);decline();invincible=0;update(0)');assert.equal(run('state'),'conversation');assert.equal(run('focus'),0);run('decline()');assert.equal(run('state'),'over')});
 test('jump clears characters and three bagels restore focus',()=>{const run=game();run('start(); player.y=GROUND-100;people.push({x:player.x});update(0)');assert.equal(run('focus'),3);run('focus=2;pickups.push(...Array.from({length:3},()=>({x:player.x,y:player.y-30})));update(0)');assert.equal(run('bagels'),3);assert.equal(run('focus'),3)});
+
+test('left reverses world travel and score still increases; right turns back',()=>{
+ const run=game();run('start();update(.1)');const before=run('camera'),score=run('distance');
+ run("keys.add('ArrowLeft');update(.1)");assert.ok(run('camera')<before);assert.ok(run('distance')>score);assert.equal(run('direction'),-1);
+ run("keys.clear();keys.add('ArrowRight');update(.1)");assert.equal(run('direction'),1);assert.ok(run('camera')>0);
+});
+test('tunnel returns to park while running left',()=>{const run=game();run("start();hatches.push({x:player.x});enter();direction=-1;tunnelTravel=2499;update(.02)");assert.equal(run('zone'),'park')});
