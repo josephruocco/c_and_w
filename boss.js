@@ -48,10 +48,10 @@ function startBoss() {
 function prepareCharge() {
   boss.phase = 'warning';
   boss.timer = boss.passes === 0 ? 2.2 : 1.35;
-  boss.direction = boss.passes % 2 === 0 ? -1 : 1;
+  // Independent choice each pass: consecutive charges can use the same side.
+  boss.direction = Math.random() < .5 ? -1 : 1;
   boss.x = boss.direction < 0 ? W + 220 : -220;
   boss.hit = false;
-  tone(120, .18);
 }
 
 function winBoss() {
@@ -138,11 +138,4 @@ function drawBossHud() {
   rect(365, 90, 470, 54, '#203c30');
   text(`MOSHIAH RV · ${boss.dodges}/${BOSS_DODGES} DODGED`, W / 2, 112, 16, '#fff1c7', 'center');
   for (let i = 0; i < BOSS_DODGES; i++) rect(388 + i * 88, 125, 72, 8, i < boss.dodges ? '#dfc96e' : '#506450');
-  if (boss.phase === 'warning' && state === 'running') {
-    const fromRight = boss.direction < 0;
-    const x = fromRight ? W - 155 : 155;
-    rect(x - 130, 225, 260, 58, '#fff1c7');
-    text(fromRight ? 'RV INCOMING ←' : '→ RV INCOMING', x, 248, 19, '#773f28', 'center');
-    text('JUMP OVER THE ROOF', x, 270, 12, '#773f28', 'center');
-  }
 }

@@ -26,7 +26,7 @@ Four 250-meter levels lead to the finale: Warm-up, Picking Up Pace, Full Stride,
 
 ## Final boss
 
-At 1,000 meters, the run moves to the MOSHIAH RV arena. Focus resets to three for the fight. Dodge five charges to win; the RV alternates sides and speeds up after each successful dodge. A collision costs one focus point and that pass does not count. Arrows move within the arena and Space jumps over the roof. There are no conversation popups during the boss. Pause works normally, and losing lets you retry the boss directly. Use **Practice Boss** on the title screen to try it immediately.
+At 1,000 meters, the run moves to the MOSHIAH RV arena. Focus resets to three for the fight. Dodge five charges to win; the RV chooses a random side for each charge, with no warning arrow or horn. Consecutive charges can come from the same side. It speeds up after each successful dodge. A collision costs one focus point and that pass does not count. Arrows move within the arena and Space jumps over the roof. There are no conversation popups during the boss. Pause works normally, and losing lets you retry the boss directly. Use **Practice Boss** on the title screen to try it immediately.
 
 ## Files
 

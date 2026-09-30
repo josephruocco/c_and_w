@@ -54,7 +54,7 @@ test('RV collision hurts once per pass, never opens conversation, and loss can r
  const run=game();run("start();introduceBoss();startBoss();boss.phase='charge';boss.x=player.x;update(0)");assert.equal(run('focus'),2);assert.equal(run('state'),'running');run('update(0)');assert.equal(run('focus'),2);
  run('focus=1;boss.hit=false;update(0)');assert.equal(run('state'),'over');run("action('Space')");assert.equal(run('focus'),3);assert.equal(run('boss.dodges'),0);assert.equal(run('state'),'running');
 });
-test('five timed jumps beat alternating RV charges without damage',()=>{
+test('five timed jumps beat RV charges without damage',()=>{
  const run=game();run('start();introduceBoss();startBoss()');
  run(`for(let i=0;i<6000&&state==='running';i++){
    const speed=700+boss.dodges*65;
@@ -97,4 +97,14 @@ test('cloud patterns are repeatable within a seed, varied across seeds, and boun
   assert.ok(run('clouds.every(c=>c.step!==0&&!c.refuge||(!c.amplitudeX&&!c.amplitudeY))'));
   assert.ok(run(`clouds.every(c=>{if(c.step===0)return true;const prev=clouds.find(p=>p.id===c.id.replace(/[^:]+$/,String(c.step-1)));return prev.baseY-c.baseY+prev.amplitudeY+c.amplitudeY<136})`));
  }
+});
+
+test('RV entry side is independent each pass and has no advance visual or sound cue',()=>{
+ const run=game();
+ run("start();introduceBoss();startBoss();let calls=0;const choices=[.1,.1,.9,.9,.1];Math.random=()=>choices[calls++];let sounds=0;tone=()=>sounds++;");
+ const sides=run("JSON.stringify(Array.from({length:5},()=>{prepareCharge();boss.passes++;return boss.direction}))");
+ assert.deepEqual(JSON.parse(sides),[-1,-1,1,1,-1]);assert.equal(run('sounds'),0);
+ run("let labels=[];text=(label)=>labels.push(label);drawBossHud()");
+ assert.equal(run("labels.some(label=>/INCOMING|ROOF|←|→/.test(label))"),false);
+ assert.equal(run('boss.x'),1420);
 });
