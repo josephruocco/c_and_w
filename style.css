@@ -209,3 +209,11 @@ kbd { font: inherit; font-weight: bold; }
 #gb-list time { color: #b9c7a6; font-size: .85em; }
 #gb-list p { margin: 4px 0 0; white-space: pre-wrap; }
 @media (pointer: coarse) and (orientation: portrait) { .guestbook { padding-top: 96px; } }
+
+.gb-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+#gb-admin { margin-top: 24px; color: #b9c7a6; }
+#gb-admin summary { cursor: pointer; }
+#gb-admin-form { display: grid; gap: 8px; margin-top: 12px; }
+#gb-admin input, #gb-admin button, .gb-delete { font: inherit; padding: 8px 12px; border: 1px solid #b9c7a6; background: #203c30; color: #fff1ce; }
+.gb-delete { margin-top: 10px; cursor: pointer; }
+#gb-admin [hidden] { display: none; }
