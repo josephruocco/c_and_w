@@ -2,9 +2,19 @@
 // Needs Netlify environment variable OPENAI_API_KEY.
 import { getStore } from '@netlify/blobs';
 
-const reply = (status, data) => Response.json(data, { status });
-
 export default async (req) => {
+  const origin = req.headers.get('Origin');
+  const allowed = new Set(['https://josephruocco.github.io', new URL(req.url).origin]);
+  const headers = {
+    'Cache-Control': 'no-store',
+    'Vary': 'Origin',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  if (origin && allowed.has(origin)) headers['Access-Control-Allow-Origin'] = origin;
+  const reply = (status, data) => Response.json(data, { status, headers });
+  if (origin && !allowed.has(origin)) return reply(403, { message: 'This origin is not allowed.' });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   const store = getStore('guestbook');
 
   if (req.method === 'GET') {
@@ -21,6 +31,14 @@ export default async (req) => {
   const n = typeof name === 'string' ? name.trim() : '';
   const b = typeof body === 'string' ? body.trim() : '';
   if (!n || n.length > 30 || !b || b.length > 280) return reply(400, { message: 'Name up to 30 characters, message up to 280.' });
+
+  // Moderation categories do not replace an explicit profanity rule.
+  const normalized = `${n} ${b}`.normalize('NFKC').toLowerCase()
+    .replace(/[\u200b-\u200f\ufeff]/g, '')
+    .replace(/[014@$!]/g, c => ({ '0': 'o', '1': 'i', '4': 'a', '@': 'a', '$': 's', '!': 'i' }[c]));
+  if (/\b(?:fuck\w*|shit\w*|bullshit|bitch\w*|cunt\w*|assholes?|motherfuck\w*)\b/i.test(normalized)) {
+    return reply(400, { message: 'Please keep it friendly and avoid profanity.' });
+  }
 
   // Fail closed: if OpenAI can't be reached, nothing gets posted.
   if (!process.env.OPENAI_API_KEY) return reply(503, { message: 'Guestbook moderation is not configured yet.' });

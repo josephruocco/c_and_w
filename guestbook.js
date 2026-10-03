@@ -1,7 +1,7 @@
 // Talks to netlify/functions/guestbook.mjs, which runs OpenAI moderation before saving.
 (()=>{
   const $=id=>document.getElementById(id);
-  const api='/api/guestbook';
+  const api=document.querySelector('meta[name=guestbook-api]')?.content.trim()||'/api/guestbook';
   const status=text=>{$('gb-status').textContent=text};
 
   async function load(){

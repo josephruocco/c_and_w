@@ -38,3 +38,21 @@ test('null, arrays, and oversized messages are rejected', async () => {
   for (const payload of [null, [], { name: 'Visitor', body: 'x'.repeat(281) }]) assert.equal((await handler(request(payload))).status, 400);
   assert.equal(stored.length, 0);
 });
+test('GitHub Pages can preflight and read comments; unknown origins are rejected', async () => {
+  const { handler } = fixture();
+  const headers = { Origin: 'https://josephruocco.github.io' };
+  const preflight = await handler(new Request('https://example.test/api/guestbook', { method: 'OPTIONS', headers }));
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), headers.Origin);
+  const list = await handler(new Request('https://example.test/api/guestbook', { headers }));
+  assert.equal(list.status, 200);
+  assert.equal(list.headers.get('Access-Control-Allow-Origin'), headers.Origin);
+  assert.equal((await handler(new Request('https://example.test/api/guestbook', { headers: { Origin: 'https://untrusted.example' } }))).status, 403);
+});
+test('profanity is rejected even when the moderation result would be unflagged', async () => {
+  const { handler, stored } = fixture();
+  for (const body of ['this is bullshit', 'what the fUck', 'sh1t']) {
+    assert.equal((await handler(request({ name: 'Visitor', body }))).status, 400);
+  }
+  assert.equal(stored.length, 0);
+});
