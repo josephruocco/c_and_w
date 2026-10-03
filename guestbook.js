@@ -21,11 +21,12 @@
   $('gb-form').addEventListener('submit',async e=>{
     e.preventDefault();
     const form=e.target,button=form.querySelector('button');
+    const nameInput=form.elements.namedItem('name'),bodyInput=form.elements.namedItem('body');
     button.disabled=true;status('Posting…');
     try{
-      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:form.name.value,body:form.body.value})});
+      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:nameInput.value,body:bodyInput.value})});
       if(!res.ok)throw new Error((await res.json().catch(()=>({}))).message||'Could not post. Try again.');
-      form.body.value='';status('Thanks for signing!');load();
+      bodyInput.value='';status('Thanks for signing!');load();
     }catch(err){status(err.message||'Could not post. Try again.')}
     button.disabled=false;
   });
