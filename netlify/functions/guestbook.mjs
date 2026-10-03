@@ -15,7 +15,7 @@ export default async (req) => {
   const reply = (status, data) => Response.json(data, { status, headers });
   if (origin && !allowed.has(origin)) return reply(403, { message: 'This origin is not allowed.' });
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
-  const store = getStore('guestbook');
+  const store = getStore({ name: 'guestbook', consistency: 'strong' });
 
   if (req.method === 'GET') {
     // Fetch the newest 100 stored comments.
