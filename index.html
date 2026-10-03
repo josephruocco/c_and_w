@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111813">
   <title>Chabad & Weave</title>
-  <link rel="stylesheet" href="style.css?v=boss-1">
+  <link rel="stylesheet" href="style.css?v=guestbook-1">
 </head>
 <body>
   <main class="arcade" aria-label="Chabad and Weave game">
@@ -50,7 +50,18 @@
       <button data-key="Space">JUMP</button>
     </div>
   </main>
+  <section class="guestbook" aria-labelledby="gb-title">
+    <h2 id="gb-title">GUESTBOOK</h2>
+    <form id="gb-form">
+      <input name="name" maxlength="30" required placeholder="Your name" aria-label="Your name">
+      <textarea name="body" maxlength="280" required rows="3" placeholder="Say hi…" aria-label="Message"></textarea>
+      <button type="submit">SIGN</button>
+    </form>
+    <p id="gb-status" role="status"></p>
+    <ol id="gb-list"></ol>
+  </section>
   <script src="boss.js?v=random-entry-3"></script>
-  <script src="game.js?v=text-1"></script>
+  <script src="game.js?v=guestbook-1"></script>
+  <script src="guestbook.js?v=1"></script>
 </body>
 </html>

@@ -8,11 +8,12 @@
 body {
   margin: 0;
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
-  place-items: center;
-  overflow: hidden;
+  justify-items: center;
+  align-content: start;
+  background: #111813;
 }
 button { font: inherit; cursor: pointer; touch-action: manipulation; }
 button:focus-visible { outline: 3px solid #ffd67a; outline-offset: 4px; }
@@ -195,3 +196,16 @@ kbd { font: inherit; font-weight: bold; }
 
 #practice { margin-top: 1cqw; color: #fff1c7; background: #263d30; border: 1px solid #b9c7a6; padding: .5cqw 1cqw; font-size: clamp(9px, .9cqw, 14px); }
 #practice.hidden { display: none; }
+
+.guestbook { width: min(100% - 32px, 640px); padding: 40px 0 64px; }
+.guestbook h2 { margin: 0 0 12px; color: #fff0ba; text-shadow: 2px 2px #283d32; }
+#gb-form { display: grid; gap: 8px; }
+#gb-form input, #gb-form textarea { font: inherit; color: #263d30; background: #fff1ce; border: 2px solid #263d30; padding: 8px; resize: vertical; }
+#gb-form button { justify-self: start; color: #fff1c7; background: #263d30; border: 2px solid #fff1c7; padding: 8px 20px; font-weight: bold; }
+#gb-form button:disabled { opacity: .5; cursor: default; }
+#gb-status { min-height: 1.2em; color: #ffc671; }
+#gb-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+#gb-list li { background: #203c30; padding: 10px 12px; overflow-wrap: anywhere; }
+#gb-list time { color: #b9c7a6; font-size: .85em; }
+#gb-list p { margin: 4px 0 0; white-space: pre-wrap; }
+@media (pointer: coarse) and (orientation: portrait) { .guestbook { padding-top: 96px; } }
