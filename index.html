@@ -6,17 +6,17 @@
   <meta name="guestbook-api" content="https://strong-sherbet-334237.netlify.app/api/guestbook">
   <meta name="theme-color" content="#111813">
   <title>Chabad & Weave</title>
-  <link rel="stylesheet" href="style.css?v=portrait-1">
+  <link rel="stylesheet" href="style.css?v=endless-1">
 </head>
 <body>
   <main class="arcade" aria-label="Chabad and Weave game">
     <div class="screen">
-      <canvas id="game" width="1200" height="540" aria-label="Running game. Arrows move, Space jumps, Down enters tunnels, P pauses."></canvas>
+      <canvas id="game" width="1200" height="540" aria-label="Running game. Arrows steer, clouds bounce automatically, Space gives an extra jump, P pauses."></canvas>
       <div class="scorebar">
         <div class="location"><b id="zone">PROSPECT PARK</b></div>
         <div class="stats">
-          <span>RUN <b id="distance">0000 m</b></span>
-          <span>FOCUS <b id="focus">● ● ●</b></span>
+          <span>HEIGHT <b id="distance">0000 m</b></span>
+          <span>BAGELS <b id="focus">● ● ●</b></span>
           <span>BEST <b id="best">0000 m</b></span>
         </div>
         <div class="menu-controls">
@@ -27,9 +27,8 @@
       <div id="overlay" class="overlay">
         <span id="overlay-tag">CHABAD & WEAVE</span>
         <h1 id="overlay-title"><span class="title-line">CHABAD<span class="title-amp">&amp;</span></span><br><span>WEAVE</span></h1>
-        <p id="overlay-text">4 levels. One final boss. Jump twice to flip. Tap the game or use JUMP on mobile.</p>
+        <p id="overlay-text">Bounce higher forever. Run automatically. Steer onto clouds, evade the spaceship, and don’t fall. Tap for an extra jump.</p>
         <button id="start">START RUN</button>
-        <button id="practice">PRACTICE BOSS</button>
         <small id="overlay-hint">PRESS SPACE</small>
       </div>
       <div id="conversation" class="conversation hidden" role="dialog" aria-modal="true" aria-labelledby="conversation-question">
@@ -39,15 +38,13 @@
       <div id="toast" role="status"></div>
       <div class="controlbar" aria-label="Keyboard controls">
         <span><kbd>← →</kbd> TURN / STEER</span>
-        <span><kbd>SPACE</kbd> JUMP ×2 FLIP</span>
-        <span><kbd>↓</kbd> TUNNEL</span>
+        <span><kbd>SPACE</kbd> EXTRA JUMP</span>
         <span><kbd>P</kbd> PAUSE</span>
       </div>
     </div>
     <div class="touch-controls" aria-label="Touch controls">
       <button data-key="ArrowLeft" aria-label="Move left">←</button>
       <button data-key="ArrowRight" aria-label="Move right">→</button>
-      <button data-key="ArrowDown" aria-label="Enter tunnel">↓</button>
       <button data-key="Space">JUMP</button>
     </div>
   </main>
@@ -72,8 +69,8 @@
       <button id="gb-lock" type="button" hidden>Lock admin controls</button>
     </details>
   </section>
-  <script src="boss.js?v=portrait-1"></script>
-  <script src="game.js?v=portrait-1"></script>
+  <script src="boss.js?v=endless-1"></script>
+  <script src="game.js?v=endless-1"></script>
   <script src="guestbook.js?v=4"></script>
 </body>
 </html>

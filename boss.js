@@ -1,141 +1,30 @@
 'use strict';
 
-// The finale uses a fixed arena so a charge can come from either side.
-const BOSS_DISTANCE = 1000;
-const BOSS_DODGES = 5;
-const boss = { active: false, phase: 'warning', timer: 0, dodges: 0, passes: 0, x: 0, direction: -1, hit: false };
-
-function introduceBoss() {
-  boss.active = true;
-  state = 'bossIntro';
-  zone = 'park';
-  viewY = 0;
-  player.x = W / 2;
-  player.y = GROUND;
-  player.vy = 0;
-  player.grounded = true;
-  player.airJump = true;
-  player.flip = 0;
-  people.length = pickups.length = hatches.length = clouds.length = 0;
-  keys.clear();
-  clearTimeout(toastTimer);
-  $('toast').style.opacity = 0;
-  $('practice').classList.add('hidden');
-  overlay('', 'MOSHIAH RV', portrait?'Dodge five charges. Use arrows to move. Tap to jump.':'FINAL BOSS · Dodge five charges. Arrows move. Space jumps.', 'FACE THE RV');
-  hud();
-}
-
-function startBoss() {
-  Object.assign(boss, { active: true, dodges: 0, passes: 0 });
-  focus = 3;
-  grace = 0;
-  invincible = 0;
-  player.x = W / 2;
-  player.y = GROUND;
-  player.vy = 0;
-  player.grounded = true;
-  player.airJump = true;
-  player.flip = 0;
-  state = 'running';
-  keys.clear();
-  $('overlay').classList.add('hidden');
-  $('pause').textContent = 'Ⅱ';
-  $('pause').setAttribute('aria-label', 'Pause game');
-  prepareCharge();
-  hud();
-}
-
-function prepareCharge() {
-  boss.phase = 'warning';
-  boss.timer = boss.passes === 0 ? 2.2 : 1.35;
-  // Independent choice each pass: consecutive charges can use the same side.
-  boss.direction = Math.random() < .5 ? -1 : 1;
-  boss.x = boss.direction < 0 ? W + 220 : -220;
-  boss.hit = false;
-}
-
-function winBoss() {
-  boss.phase = 'defeated';
-  state = 'won';
-  keys.clear();
-  best = Math.max(best, distance);
-  try { localStorage.setItem('cw-best', String(Math.floor(best))); } catch {}
-  overlay('', 'RUN COMPLETE', 'All five RV charges dodged. Nice running.', 'RUN AGAIN');
-  tone(880, .4);
-  hud();
-}
-
-function updateBoss(dt) {
-  tick += dt;
-  player.flip = Math.max(0, player.flip - dt);
-  invincible = Math.max(0, invincible - dt);
-  const move = Number(keys.has('ArrowRight') || keys.has('KeyD')) - Number(keys.has('ArrowLeft') || keys.has('KeyA'));
-  if (move) direction = move;
-  player.x = Math.max(60, Math.min(W - 60, player.x + move * 320 * dt));
-  if (player.grounded && (keys.has('Space') || keys.has('ArrowUp') || keys.has('KeyW'))) jump();
-  player.vy += 1900 * dt;
-  player.y += player.vy * dt;
-  if (player.y >= GROUND) { player.y = GROUND; player.vy = 0; player.grounded = true; player.airJump = true; player.flip = 0; }
-  if (boss.phase === 'warning') {
-    boss.timer -= dt;
-    if (boss.timer <= 0) boss.phase = 'charge';
-  } else if (boss.phase === 'charge') {
-    boss.x += boss.direction * (700 + boss.dodges * 65) * dt;
-    // The RV is 200 pixels wide and 80 high; jump above its roof.
-    if (!boss.hit && Math.abs(player.x - boss.x) < 110 && player.y > GROUND - 84) {
-      boss.hit = true;
-      focus--;
-      invincible = 1;
-      tone(100, .25);
-      toast('TOO CLOSE · -1 FOCUS');
-      if (focus <= 0) {
-        end();
-        overlay('', 'THE RV CAUGHT UP', 'Time your jump with the charge. Try the boss again.', 'RETRY BOSS');
-        return;
-      }
+const ship={active:false,x:0,y:0,direction:1,timer:4};
+function resetShip(){Object.assign(ship,{active:false,x:0,y:0,direction:1,timer:4})}
+function updateShip(dt){
+  if(!ship.active){
+    ship.timer-=dt;
+    if(ship.timer<=0){
+      ship.active=true;ship.direction=Math.random()<.5?1:-1;
+      ship.x=ship.direction===1?-140:W+140;ship.y=player.y-65;
+      toast('MOSHIAH SPACESHIP · EVADE!');tone(190,.18);
     }
-    if ((boss.direction < 0 && boss.x < -220) || (boss.direction > 0 && boss.x > W + 220)) {
-      if (!boss.hit) boss.dodges++;
-      boss.passes++;
-      if (boss.dodges >= BOSS_DODGES) { winBoss(); return; }
-      prepareCharge();
-    }
+    return;
   }
-  hud();
-}
-
-function drawBoss() {
-  if (!boss.active) return;
-  // Road markings distinguish the boss arena from the park footpath.
-  rect(0, GROUND + 7, W, 51, '#727873');
-  for (let x = 0; x < W; x += 130) rect(x, GROUND + 31, 65, 5, '#eee2aa');
-  if (boss.phase === 'charge') {
-    const x = boss.x, y = GROUND;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(-boss.direction, 1);
-    rect(-98, -76, 156, 62, '#fff1c7');
-    rect(-88, -86, 120, 10, '#d5c69c');
-    rect(58, -64, 38, 50, '#eee3b9');
-    rect(63, -59, 26, 23, '#6b9da7');
-    rect(-84, -68, 32, 17, '#6b9da7');
-    rect(-45, -68, 32, 17, '#6b9da7');
-    rect(-98, -30, 193, 12, '#bd713a');
-    rect(-97, -18, 197, 7, '#334943');
-    rect(91, -35, 7, 10, '#ffe986');
-    for (const wheel of [-58, 60]) {
-      ctx.fillStyle = '#202b2c'; ctx.beginPath(); ctx.arc(wheel, -9, 14, 0, Math.PI * 2); ctx.fill();
-      rect(wheel - 5, -14, 10, 10, '#b5bdaf');
-    }
-    ctx.restore();
-    // Keep lettering legible when the vehicle turns around.
-    text('MOSHIAH RV', x - boss.direction * 15, y - 35, 17, '#543c27', 'center');
+  ship.x+=ship.direction*(210+Math.min(distance*.2,100))*dt;
+  if(Math.abs(player.x-ship.x)<75&&Math.abs(player.y-30-ship.y)<35){
+    end();overlay('','CAUGHT IN SPACE',`${Math.floor(distance)} m climbed · ${bagels} bagels`,'TRY AGAIN');return;
   }
+  if(ship.x< -160||ship.x>W+160){ship.active=false;ship.timer=3+Math.random()*2}
 }
-
-function drawBossHud() {
-  if (!boss.active || state === 'bossIntro') return;
-  rect(W / 2 - 235, portrait ? 150 : 90, 470, 54, '#203c30');
-  text(`MOSHIAH RV · ${boss.dodges}/${BOSS_DODGES} DODGED`, W / 2, portrait ? 172 : 112, 16, '#fff1c7', 'center');
-  for (let i = 0; i < BOSS_DODGES; i++) rect(W / 2 - 212 + i * 88, portrait ? 185 : 125, 72, 8, i < boss.dodges ? '#dfc96e' : '#506450');
+function drawShip(){
+  if(!ship.active)return;
+  const x=ship.x,y=ship.y;
+  rect(x-38,y-38,76,24,'#88c7d7');rect(x-25,y-48,50,10,'#c5eff0');
+  rect(x-62,y-14,124,25,'#e8dcaf');rect(x-78,y-5,156,12,'#8d9e99');
+  rect(x-50,y+11,100,7,'#bd713a');
+  for(let i=0;i<5;i++)rect(x-48+i*24,y+4,8,5,i%2?'#f0aa57':'#e9edb7');
+  text('MOSHIAH',x,y-17,12,'#233d32','center');
+  rect(x-ship.direction*85,y,12+Math.sin(tick*25)*5,7,'#f4b75d');
 }

@@ -12,16 +12,15 @@ function resizeGame(){
   H=portrait?Math.round(W*bounds.height/bounds.width):540;
   sceneOffset=portrait?H-640:0;
   canvas.width=W;canvas.height=H;
-  if(boss.active){
-    player.x=Math.max(60,Math.min(W-60,player.x*W/oldW));
-    boss.x*=W/oldW;
-  }else{
-    const nextX=portrait?180:230;
-    camera+=player.x-nextX;player.x=nextX;
-  }
+  player.x=Math.max(30,Math.min(W-30,player.x*W/oldW));
+  for(const c of clouds)c.x=Math.max(0,Math.min(W-c.w,(c.x+c.w/2)*W/oldW-c.w/2));
+  nextCloudX=Math.max(105,Math.min(W-105,nextCloudX*W/oldW));
+  for(const b of pickups)if(b.platform)b.x=b.platform.x+b.platform.w/2;
+  ship.x*=W/oldW;
+
 }
 let state='ready', zone='park', distance=0, camera=0, focus=3, bagels=0, best=0, tick=0, invincible=0, tunnelUntil=0, last=0, spawnAt=550, hatchAt=1000, sound=false, audio;
-try{best=Number(localStorage.getItem('cw-best'))||0}catch{}
+try{best=Number(localStorage.getItem('cw-endless-best'))||0}catch{}
 const keys=new Set(), people=[], pickups=[], hatches=[];
 let direction=1, tunnelTravel=0, viewY=0, grace=0;
 const clouds=[], skyRoutes=new Set(), usedRefuges=new Set();
@@ -31,18 +30,9 @@ function cloudRandom(n){const v=Math.sin(n*127.1+cloudSeed*311.7)*43758.5453;ret
 const LEVEL_LENGTH=250;
 const LEVEL_NAMES=['WARM-UP','PICKING UP PACE','FULL STRIDE','FINAL STRETCH'];
 let level=1;
-function runningSpeed(){return 225+Math.min(distance*.105,105)}
-function updateLevel(){
-  const next=Math.min(4,1+Math.floor(distance/LEVEL_LENGTH));
-  if(next>level){focus=Math.min(3,focus+1);toast(`LEVEL ${next} · ${LEVEL_NAMES[next-1]} · +1 FOCUS`);tone(620,.16)}
-  level=next;
-}
 function drawLevelProgress(){
-  if(state!=='running'||boss.active)return;
-  const progress=Math.min(1,(distance-(level-1)*LEVEL_LENGTH)/LEVEL_LENGTH);
-  rect(24,portrait?H-150:494,W-48,5,'#405942');rect(24,portrait?H-150:494,(W-48)*progress,5,'#f5d67d');
-  text(`LEVEL ${level}/4 · ${LEVEL_NAMES[level-1]}`,24,portrait?H-128:516,11,'#fff1ce');
-  text(`${Math.max(0,Math.ceil(level*LEVEL_LENGTH-distance))}m TO ${level===4?'FINAL BOSS':'LEVEL '+(level+1)}`,W-24,portrait?H-128:516,11,'#fff1ce','right');
+  if(state!=='running')return;
+  text('KEEP CLIMBING · DON’T FALL',W/2,portrait?H-128:510,portrait?16:12,'#fff1ce','center');
 }
 const player={x:230,y:GROUND,vy:0,grounded:true,airJump:true,flip:0,climbing:false};
 const colors={ink:'#233d32',skin:'#d9a17c',orange:'#e56b3f'};
@@ -51,11 +41,21 @@ function text(s,x,y,size,color,align='left'){ctx.fillStyle=color;ctx.font=`bold 
 function tone(freq,duration=.09){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration)}catch{}}
 let toastTimer;
 function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.opacity=0,2200)}
-function hud(){$('distance').textContent=String(Math.floor(distance)).padStart(4,'0')+' m';$('best').textContent=String(Math.floor(best)).padStart(4,'0')+' m';$('focus').textContent='● '.repeat(focus)+'○ '.repeat(3-focus);$('zone').textContent=boss.active?'FINAL BOSS':`L${level} · `+(zone==='tunnel'?'UNDERGROUND':grace>0?'PEARLY GATES':player.y< -600?'OUTER SPACE':player.y<200?'CLOUD ROUTE':'PROSPECT PARK')}
-function start(){cloudSeed=Math.floor(Math.random()*1000000);player.platform=null;player.climbing=false;level=1;boss.active=false;boss.phase='warning';$('practice').classList.add('hidden');state='running';zone='park';direction=1;tunnelTravel=0;viewY=0;grace=0;clouds.length=0;skyRoutes.clear();usedRefuges.clear();loadedBlocks.clear();distance=0;camera=0;focus=3;bagels=0;tick=0;invincible=0;tunnelUntil=0;spawnAt=550;hatchAt=1000;people.length=pickups.length=hatches.length=0;player.x=portrait?180:230;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;populateSky();$('overlay').classList.add('hidden');$('conversation').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();tone(360)}
+function hud(){$('distance').textContent=Math.floor(distance)+' m';$('best').textContent=Math.floor(best)+' m';$('focus').textContent=String(bagels);$('zone').textContent='ENDLESS SKY'}
+let nextCloudY=335,nextCloudX=230,highestY=GROUND;
+function start(){
+  cloudSeed=Math.floor(Math.random()*1000000);state='running';zone='park';direction=1;
+  camera=0;viewY=0;distance=0;bagels=0;tick=0;grace=0;invincible=0;highestY=GROUND;
+  clouds.length=people.length=pickups.length=hatches.length=0;
+  Object.assign(player,{x:W/2,y:GROUND,vy:-720,grounded:false,airJump:true,flip:0,platform:null,climbing:true});
+  nextCloudY=335;nextCloudX=player.x+90;resetShip();populateSky();
+  $('overlay').classList.add('hidden');$('conversation').classList.add('hidden');
+  $('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game');
+  keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;hud();
+}
 function overlay(tag,title,body,button){$('overlay-tag').textContent=tag;$('overlay-title').innerHTML=title;$('overlay-text').textContent=body;$('start').textContent=button;$('overlay-hint').textContent='PRESS SPACE';$('overlay').classList.remove('hidden')}
 function pause(){if(state==='running'){state='paused';keys.clear();overlay('','PAUSED','','RESUME');$('pause').textContent='▶';$('pause').setAttribute('aria-label','Resume game')}else if(state==='paused'){state='running';$('overlay').classList.add('hidden');$('pause').textContent='Ⅱ';$('pause').setAttribute('aria-label','Pause game')}}
-function end(){state='over';best=Math.max(best,distance);try{localStorage.setItem('cw-best',String(Math.floor(best)))}catch{}hud();overlay('','RUN OVER',`${Math.floor(distance)} m · ${bagels} bagels`,'TRY AGAIN');tone(150,.25)}
+function end(){state='over';best=Math.max(best,distance);try{localStorage.setItem('cw-endless-best',String(Math.floor(best)))}catch{}hud();overlay('','RUN OVER',`${Math.floor(distance)} m · ${bagels} bagels`,'TRY AGAIN');tone(150,.25)}
 function decline(){if(state!=='conversation')return;$('conversation').classList.add('hidden');keys.clear();if(focus<=0){end();return}invincible=2.2;state='running';tone(360)}
 function jump(){
   if(state!=='running')return;
@@ -65,7 +65,6 @@ function jump(){
     player.airJump=false;player.vy=-640;player.flip=.5;tone(760,.14);toast('DO A BARREL ROLL!');
   }
 }
-function enter(){if(state!=='running'||boss.active)return;const h=hatches.find(h=>Math.abs(h.x-camera-player.x)<68);if(!h||player.y<GROUND-10)return;zone=zone==='park'?'tunnel':'park';clouds.length=0;skyRoutes.clear();viewY=0;people.length=0;pickups.length=0;hatches.length=0;loadedBlocks.clear();tunnelTravel=0;spawnAt=camera+500;hatchAt=camera+1000;tunnelUntil=zone==='tunnel'?camera+2500:0;invincible=1.2;toast(zone==='tunnel'?'UNDERGROUND':'PROSPECT PARK');tone(210,.2);hud()}
 function runner(x,y){const phase=Math.sin(tick*14),leg=!player.grounded?8:phase*10;rect(x-10,y-60,21,6,colors.orange);rect(x-7,y-54,17,16,colors.skin);rect(x+7,y-50,6,5,colors.skin);rect(x-9,y-39,21,24,colors.orange);rect(x-7,y-15,19,8,'#274a43');rect(x-8-leg/2,y-8,7,10,'#274a43');rect(x+5+leg/2,y-8,7,10,'#274a43');rect(x-11-leg/2,y+1,12,5,'#f6ecd1');rect(x+5+leg/2,y+1,13,5,'#f6ecd1');rect(x-16,y-35+phase*3,7,19,colors.skin);rect(x+13,y-32-phase*3,7,16,colors.skin);rect(x-7,y-57,15,4,'#684632');rect(x+4,y-48,3,3,colors.ink)}
 function person(x,y,phase=0){const step=Math.sin(tick*5+phase)*4;rect(x-12,y-67,25,15,'#293331');rect(x-19,y-54,38,5,'#293331');rect(x-9,y-49,19,18,'#c89777');rect(x-10,y-37,20,11,'#4e4033');rect(x-14,y-26,29,34,'#293331');rect(x-2,y-26,6,14,'#eeebdc');rect(x-20,y-25,7,25,'#293331');rect(x+15,y-25,7,25,'#293331');rect(x-13,y+8,10,12+step,'#293331');rect(x+5,y+8,10,12-step,'#293331');rect(x-17,y+18+step,14,5,'#222e29');rect(x+5,y+18-step,14,5,'#222e29')}
 function tree(x,y,s){rect(x-7*s,y-95*s,14*s,100*s,'#69785b');rect(x-37*s,y-125*s,73*s,43*s,'#648664');rect(x-52*s,y-110*s,100*s,34*s,'#648664');rect(x-27*s,y-143*s,53*s,31*s,'#78956c');rect(x-46*s,y-102*s,58*s,15*s,'#73936a')}
@@ -105,7 +104,7 @@ function drawCloud(c){
 function draw(){
   ctx.clearRect(0,0,W,H);spaceBackdrop();ctx.save();ctx.translate(0,sceneOffset-viewY);
   if(viewY> -540)background();
-  if(zone!=='tunnel')for(const c of clouds)if(c.x+c.w>camera&&c.x<camera+W&&c.y-viewY> -180&&c.y-viewY<H-sceneOffset+40)drawCloud(c);
+  if(zone!=='tunnel')for(const c of clouds)if(c.x+c.w>camera&&c.x<camera+W&&c.y-viewY+sceneOffset> -180&&c.y-viewY<H-sceneOffset+40)drawCloud(c);
   for(const h of hatches){let x=h.x-camera;rect(x-40,417,80,14,'#304b3a');rect(x-34,421,68,8,'#182d25');for(let i=0;i<5;i++)rect(x-27+i*13,418,4,12,'#6d8161');rect(x-24,364,48,30,'#f0e9cf');text('↓',x,385,24,colors.ink,'center');text(zone==='park'?'DETOUR':'EXIT',x,354,10,zone==='park'?colors.ink:'#efe8c8','center')}
 for(const b of pickups){let x=b.x-camera,y=b.y+Math.sin(tick*4+b.x)*4;ctx.strokeStyle='#8e5c2f';ctx.lineWidth=9;ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#e7b56a';ctx.lineWidth=6;ctx.stroke();rect(x-7,y-7,2,2,'#f3dfaa');rect(x+4,y+4,2,2,'#f3dfaa')}
 for(const p of people){
@@ -118,12 +117,12 @@ for(const p of people){
   }
   if(Math.abs(x-player.x)<280&&Math.abs(y-player.y)<150){rect(x-72,y-120,144,27,'#f4efdb');rect(x-8,y-93,8,7,'#f4efdb');text('Are you Jewish?',x,y-102,12,colors.ink,'center')}
 }
-if(state==='ready'){person(880,GROUND-23);rect(808,GROUND-120,144,27,'#f4efdb');text('Are you Jewish?',880,GROUND-102,12,colors.ink,'center')}
-drawBoss();
+
+drawShip();
 if(invincible<=0||Math.floor(tick*13)%2===0){ctx.save();ctx.translate(player.x,player.y-30);ctx.scale(direction,1);if(player.flip>0){const c=Math.cos((1-player.flip/.5)*Math.PI*2);ctx.scale(1,Math.sign(c||1)*Math.max(.12,Math.abs(c)))}runner(0,30);ctx.restore();}
 if(grace>0){ctx.strokeStyle='#ffe39a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(player.x,player.y-79,19,6,0,0,Math.PI*2);ctx.stroke()}
 ctx.restore();
-drawBossHud();drawLevelProgress();
+drawLevelProgress();
 if(state==='running'){
   text(`BAGELS ${bagels}`,24,90,12,viewY< -200||zone==='tunnel'?'#ede7ce':colors.ink);
   text(player.airJump?'FLIP READY':'FLIP USED',24,108,10,viewY< -200||zone==='tunnel'?'#ede7ce':colors.ink);
@@ -131,107 +130,61 @@ if(state==='running'){
 }
 }
 function populateSky(){
-  if(zone==='tunnel')return;
-  const center=Math.floor((camera+player.x)/2400);
-  for(let route=center-1;route<=center+1;route++){
-    if(skyRoutes.has(route))continue;
-    skyRoutes.add(route);
-    for(const side of [-1,1]){
-      const anchor=route*2400+230+side*300;
-      let height=335;
-      for(let step=0;step<17;step++){
-        const n=route*101+side*43+step*7,refuge=step===14;
-        if(step)height-=105+cloudRandom(n+1)*45;
-        const w=refuge?270:155+Math.floor(cloudRandom(n+2)*40);
-        const x=anchor+(step?(cloudRandom(n)*2-1)*120:0)-w/2,y=height,id=`${route}:${side}:${step}`;
-        const motion=step===0||refuge?0:Math.floor(cloudRandom(n+3)*3);
-        const c={x,y,w,refuge,id,step,baseX:x,baseY:y,previousY:y,
-          amplitudeX:motion===1?14+cloudRandom(n+4)*12:0,
-          amplitudeY:motion===2?10+cloudRandom(n+4)*8:0,
-          phase:cloudRandom(n+5)*Math.PI*2,frequency:.8+cloudRandom(n+6)*.5};
-        clouds.push(c);
-        if([10,13,16].includes(step))people.push({x:x+w/2,y,sky:true,platform:c});
-        if(step%3===1)pickups.push({x:x+w/2,y:y-55,platform:c});
-      }
-    }
+  // Each landing is within a normal bounce's height and steering reach.
+  while(nextCloudY>viewY-sceneOffset-350){
+    const n=Math.round(-nextCloudY),w=150;
+    nextCloudX=Math.max(w/2+30,Math.min(W-w/2-30,nextCloudX+(nextCloudY===335?0:(cloudRandom(n)-.5)*150)));
+    const c={x:nextCloudX-w/2,y:nextCloudY,w,step:1};
+    clouds.push(c);
+    if(cloudRandom(n+8)>.6)pickups.push({x:nextCloudX,y:nextCloudY-45,platform:c});
+    nextCloudY-=85+cloudRandom(n+3)*25;
   }
-  for(const route of skyRoutes)if(Math.abs(route-center)>2)skyRoutes.delete(route);
-  for(let i=clouds.length-1;i>=0;i--)if(Math.abs(clouds[i].x-camera-player.x)>15000)clouds.splice(i,1);
-}
-// Move platforms before gravity, carrying a standing runner by the same delta.
-function moveClouds(){
-  for(const c of clouds){
-    const oldX=c.x,oldY=c.y;c.previousY=oldY;
-    if(c.baseX!==undefined){
-      c.x=c.baseX+Math.sin(tick*c.frequency+c.phase)*(c.amplitudeX||0);
-      c.y=c.baseY+Math.sin(tick*c.frequency+c.phase)*(c.amplitudeY||0);
-    }
-    if(player.grounded&&player.platform===c){camera+=c.x-oldX;player.y+=c.y-oldY}
-  }
-  for(const p of people)if(p.platform){p.x=p.platform.x+p.platform.w/2;p.y=p.platform.y}
-  for(const b of pickups)if(b.platform){b.x=b.platform.x+b.platform.w/2;b.y=b.platform.y-55}
+  const bottom=viewY+H-sceneOffset+120;
+  for(let i=clouds.length-1;i>=0;i--)if(clouds[i].y>bottom)clouds.splice(i,1);
+  for(let i=pickups.length-1;i>=0;i--)if(pickups[i].y>bottom)pickups.splice(i,1);
 }
 function landOnClouds(previousY){
-  const worldX=camera+player.x;
-  const support=player.platform;player.platform=null;
-  player.grounded=false;
-  if(player.vy>=0&&zone!=='tunnel'){
-    const landed=clouds.filter(c=>worldX>=c.x-8&&worldX<=c.x+c.w+8&&previousY<=(support===c?c.y:(c.previousY??c.y))+.01&&player.y>=c.y).sort((a,b)=>a.y-b.y)[0];
-    if(landed){
-      player.climbing=true;player.platform=landed;player.y=landed.y;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0;
-      if(landed.refuge&&!usedRefuges.has(landed.id)){
-        usedRefuges.add(landed.id);grace=12;toast('PEARLY GATES · 12 seconds of immunity');tone(850,.2);
-      }
-    }
+  if(player.vy<0)return;
+  const landed=clouds.filter(c=>player.x>=c.x-8&&player.x<=c.x+c.w+8&&previousY<=c.y&&player.y>=c.y).sort((a,b)=>a.y-b.y)[0];
+  if(landed){
+    player.y=landed.y;player.vy=-720;player.grounded=false;player.airJump=true;player.flip=0;
+    tone(420+Math.min(distance,500),.06);
   }
-  if(player.y>=GROUND){player.climbing=false;player.y=GROUND;player.vy=0;player.grounded=true;player.airJump=true;player.flip=0}
-}
-function populateGround(){
-  const center=Math.floor((camera+player.x)/900);
-  for(let block=center-2;block<=center+2;block++){
-    if(loadedBlocks.has(block))continue;
-    loadedBlocks.add(block);
-    const x=block*900+760;
-    people.push({x});pickups.push({x:x-160,y:GROUND-95},{x:x+120,y:GROUND-130});
-    if(block%2===0)hatches.push({x:block*900+1150});
-  }
-  for(const block of loadedBlocks)if(Math.abs(block-center)>5)loadedBlocks.delete(block);
-  for(const list of [people,pickups,hatches])for(let i=list.length-1;i>=0;i--)if(!list[i].sky&&Math.abs(list[i].x-camera-player.x)>5000)list.splice(i,1);
 }
 function update(dt){
   if(state!=='running')return;
-  if(boss.active){updateBoss(dt);return}
-  if(distance>=BOSS_DISTANCE){introduceBoss();return}
-  tick+=dt;
-  player.flip=Math.max(0,player.flip-dt);
+  tick+=dt;player.flip=Math.max(0,player.flip-dt);
   if(keys.has('ArrowLeft')||keys.has('KeyA'))direction=-1;
   if(keys.has('ArrowRight')||keys.has('KeyD'))direction=1;
-  const speed=runningSpeed();
-  // In cloud clusters, release the arrows to stay above a platform.
-  const steering=Number(keys.has('ArrowRight')||keys.has('KeyD'))-Number(keys.has('ArrowLeft')||keys.has('KeyA'));
-  const travel=(player.climbing?steering*280:direction*speed)*dt;
-  camera+=travel;
-  distance+=Math.abs(travel)/10;
-  updateLevel();
-  invincible=Math.max(0,invincible-dt);
-  grace=Math.max(0,grace-dt);
-  populateGround();populateSky();moveClouds();
-  if(player.grounded&&(keys.has('Space')||keys.has('ArrowUp')||keys.has('KeyW')))jump();
+  player.x+=direction*180*dt;
+  if(player.x<25){player.x=25;direction=1}
+  if(player.x>W-25){player.x=W-25;direction=-1}
   const previousY=player.y;
   player.vy+=1900*dt;player.y+=player.vy*dt;
   landOnClouds(previousY);
-  if(player.climbing)distance+=Math.max(0,previousY-player.y)/10;
-  viewY=zone==='tunnel'?0:Math.min(0,player.y-250);
-  if(zone==='tunnel'){
-    tunnelTravel+=speed*dt;
-    if(tunnelTravel>2500){zone='park';people.length=pickups.length=hatches.length=0;loadedBlocks.clear();skyRoutes.clear();clouds.length=0;toast('PROSPECT PARK')}
+  highestY=Math.min(highestY,player.y);
+  distance=Math.max(distance,(GROUND-highestY)/10);
+  // The camera only rises: falling below the screen ends the run.
+  viewY=Math.min(viewY,player.y-250);
+  populateSky();updateShip(dt);
+  if(state!=='running')return;
+  if(player.y-viewY+sceneOffset>H+70){end();return}
+  for(let i=pickups.length-1;i>=0;i--){
+    const b=pickups[i];
+    if(Math.abs(b.x-player.x)<31&&Math.abs(b.y-(player.y-30))<43){pickups.splice(i,1);bagels++;tone(700)}
   }
-for(let i=people.length-1;i>=0;i--){const p=people[i];const x=p.x-camera;if(Math.abs(x-player.x)<30&&player.y>(p.y??GROUND)-68&&player.y<(p.y??GROUND)+35&&invincible<=0&&grace<=0){focus--;state='conversation';keys.clear();clearTimeout(toastTimer);$('toast').style.opacity=0;$('conversation').classList.remove('hidden');tone(190,.15);hud();return}if(Math.abs(x-player.x)>(p.sky?15000:5000))people.splice(i,1)}
-for(let i=pickups.length-1;i>=0;i--){const b=pickups[i],x=b.x-camera;if(Math.abs(x-player.x)<31&&Math.abs(b.y-(player.y-30))<43){pickups.splice(i,1);bagels++;tone(700);if(bagels%3===0){focus=Math.min(3,focus+1);toast('+1 FOCUS')}}else if(Math.abs(x-player.x)>5000)pickups.splice(i,1)}
-if(keys.has('ArrowDown')||keys.has('KeyS')){enter();keys.delete('ArrowDown');keys.delete('KeyS')}hud()}
+  hud();
+}
 function frame(now){const dt=Math.min((now-last)/1000,.035);last=now;if(state==='running')update(dt);draw();requestAnimationFrame(frame)}
-function action(code){if(state==='running'){if(code==='ArrowLeft'||code==='KeyA')direction=-1;if(code==='ArrowRight'||code==='KeyD')direction=1}if(code==='KeyP'||code==='Escape'){pause();return}if(code==='Space'||code==='ArrowUp'||code==='KeyW'){if(state==='bossIntro'||(state==='over'&&boss.active))startBoss();else if(state==='ready'||state==='over'||state==='won')start();else if(state==='paused')pause();else jump()}}
-window.addEventListener('keydown',e=>{if(e.target.closest?.('input,textarea'))return;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(!e.repeat)action(e.code);keys.add(e.code)});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();if(state==='running')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='running')pause()});$('decline').onclick=decline;$('practice').onclick=()=>{start();introduceBoss()};$('start').onclick=()=>{if(state==='paused')pause();else if(state==='bossIntro'||(state==='over'&&boss.active))startBoss();else start()};$('pause').onclick=pause;$('sound').onclick=()=>{sound=!sound;$('sound').textContent=sound?'SOUND ON':'SOUND OFF';$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',sound?'Mute sound':'Enable sound');tone(540)};
+function action(code){
+  if(code==='ArrowLeft'||code==='KeyA')direction=-1;
+  if(code==='ArrowRight'||code==='KeyD')direction=1;
+  if(code==='KeyP'||code==='Escape'){pause();return}
+  if(code==='Space'||code==='ArrowUp'||code==='KeyW'){
+    if(state==='ready'||state==='over')start();else if(state==='paused')pause();else jump();
+  }
+}
+window.addEventListener('keydown',e=>{if(e.target.closest?.('input,textarea'))return;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(!e.repeat)action(e.code);keys.add(e.code)});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();if(state==='running')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='running')pause()});$('decline').onclick=decline;$('start').onclick=()=>{if(state==='paused')pause();else start()};$('pause').onclick=pause;$('sound').onclick=()=>{sound=!sound;$('sound').textContent=sound?'SOUND ON':'SOUND OFF';$('sound').setAttribute('aria-pressed',String(sound));$('sound').setAttribute('aria-label',sound?'Mute sound':'Enable sound');tone(540)};
 for(const button of document.querySelectorAll('[data-key]')){button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);keys.add(button.dataset.key);action(button.dataset.key)});for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>keys.delete(button.dataset.key))}
 canvas.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'||state!=='running')return;
