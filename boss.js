@@ -21,7 +21,7 @@ function introduceBoss() {
   clearTimeout(toastTimer);
   $('toast').style.opacity = 0;
   $('practice').classList.add('hidden');
-  overlay('', 'MOSHIAH RV', 'FINAL BOSS · Dodge five charges. Arrows move. Space jumps.', 'FACE THE RV');
+  overlay('', 'MOSHIAH RV', portrait?'Dodge five charges. Use arrows to move. Tap to jump.':'FINAL BOSS · Dodge five charges. Arrows move. Space jumps.', 'FACE THE RV');
   hud();
 }
 
@@ -135,7 +135,7 @@ function drawBoss() {
 
 function drawBossHud() {
   if (!boss.active || state === 'bossIntro') return;
-  rect(365, 90, 470, 54, '#203c30');
-  text(`MOSHIAH RV · ${boss.dodges}/${BOSS_DODGES} DODGED`, W / 2, 112, 16, '#fff1c7', 'center');
-  for (let i = 0; i < BOSS_DODGES; i++) rect(388 + i * 88, 125, 72, 8, i < boss.dodges ? '#dfc96e' : '#506450');
+  rect(W / 2 - 235, portrait ? 150 : 90, 470, 54, '#203c30');
+  text(`MOSHIAH RV · ${boss.dodges}/${BOSS_DODGES} DODGED`, W / 2, portrait ? 172 : 112, 16, '#fff1c7', 'center');
+  for (let i = 0; i < BOSS_DODGES; i++) rect(W / 2 - 212 + i * 88, portrait ? 185 : 125, 72, 8, i < boss.dodges ? '#dfc96e' : '#506450');
 }

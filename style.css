@@ -157,10 +157,7 @@ kbd { font: inherit; font-weight: bold; }
   .menu-controls button { min-height: 28px; }
   .overlay small { display: none; }
 }
-@media (pointer: coarse) and (orientation: portrait) {
-  .touch-controls { bottom: -65px; }
-  .touch-controls button { height: 48px; width: 56px; }
-}
+
 
 .conversation {
   position: absolute;
@@ -208,7 +205,7 @@ kbd { font: inherit; font-weight: bold; }
 #gb-list li { background: #203c30; padding: 10px 12px; overflow-wrap: anywhere; }
 #gb-list time { color: #b9c7a6; font-size: .85em; }
 #gb-list p { margin: 4px 0 0; white-space: pre-wrap; }
-@media (pointer: coarse) and (orientation: portrait) { .guestbook { padding-top: 96px; } }
+
 
 .gb-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 #gb-admin { margin-top: 24px; color: #b9c7a6; }
@@ -217,3 +214,33 @@ kbd { font: inherit; font-weight: bold; }
 #gb-admin input, #gb-admin button, .gb-delete { font: inherit; padding: 8px 12px; border: 1px solid #b9c7a6; background: #203c30; color: #fff1ce; }
 .gb-delete { margin-top: 10px; cursor: pointer; }
 #gb-admin [hidden] { display: none; }
+
+/* Portrait phones get a full viewport, with controls inside the safe area. */
+@media (orientation: portrait) and (max-width: 900px) {
+  .arcade { width: 100%; height: 100vh; height: 100dvh; }
+  .screen { width: 100%; height: 100%; aspect-ratio: auto; }
+  canvas { touch-action: none; }
+  .scorebar {
+    padding: max(12px, env(safe-area-inset-top)) 12px 12px;
+    gap: 8px; font-size: 11px;
+  }
+  .location, .controlbar { display: none; }
+  .stats { margin: 0 auto 0 0; gap: 10px; }
+  .stats b { font-size: 12px; }
+  .menu-controls { gap: 4px; }
+  .menu-controls button { min-height: 44px; padding: 8px; }
+  #pause { min-width: 44px; }
+  .overlay { inset: 15% 20px 25%; gap: 14px; }
+  .overlay h1 { font-size: clamp(36px, 12cqw, 76px); overflow-wrap: anywhere; }
+  .overlay p { max-width: 32ch; margin: 0; font-size: 14px; line-height: 1.5; }
+  #start, #practice { min-height: 48px; padding: 12px 20px; font-size: 16px; margin: 0; }
+  .overlay small { display: none; }
+  #toast { top: 21%; width: max-content; max-width: 90%; padding: 10px 14px; font-size: 13px; }
+  .touch-controls { display: flex; position: absolute; inset: auto 12px max(16px, env(safe-area-inset-bottom)); gap: 8px; }
+  .touch-controls button { width: 56px; height: 60px; border: 1px solid #d2dec46b; border-radius: 12px; background: #203c30e8; color: #fff5d4; font-size: 22px; font-weight: bold; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .touch-controls button:nth-child(3) { margin-left: auto; }
+  .touch-controls button:last-child { width: 88px; font-size: 17px; }
+  .conversation { padding: 20px; gap: 20px; }
+  .conversation p { padding: 16px; font-size: 24px; text-align: center; }
+  #decline { min-height: 48px; font-size: 16px; }
+}

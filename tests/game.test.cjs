@@ -6,6 +6,7 @@ function game(){
  const testMath=Object.create(Math);testMath.random=()=>.12345;
  const nodes=new Map();
  const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',innerHTML:'',style:{},classList:{add(){},remove(){}},setAttribute(){},addEventListener(){}});return nodes.get(id)};
+ node('game').getBoundingClientRect=()=>({width:1200,height:540});
  node('game').getContext=()=>new Proxy({},{get:()=>()=>{},set:()=>true});
  const context=vm.createContext({document:{querySelector:s=>node(s.slice(1)),getElementById:node,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},Math:testMath});
  vm.runInContext(fs.readFileSync('boss.js','utf8'),context);
@@ -122,4 +123,31 @@ test('clouds stay vertically clustered and movement stops when arrows are releas
  assert.ok(run("(()=>{const route=clouds.filter(c=>c.id.startsWith('0:1:'));return Math.max(...route.map(c=>c.baseX+c.w/2))-Math.min(...route.map(c=>c.baseX+c.w/2))<241})()"));
  run('player.climbing=true;player.y=-300;player.grounded=false;camera=0;update(.01)');assert.equal(run('camera'),0);
  run("keys.add('ArrowRight');update(.01)");assert.ok(run('camera')>0);
+});
+
+test('portrait viewport preserves world position and jump physics across rotation',()=>{
+ const run=game();run('start();camera=100;');
+ const worldX=run('camera+player.x');
+ run('canvas.getBoundingClientRect=()=>({width:390,height:844});resizeGame();draw()');
+ assert.equal(run('W'),600);assert.equal(run('H'),1298);
+ assert.equal(run('camera+player.x'),worldX);
+ assert.equal(run('player.y+sceneOffset'),run('H-210'));
+ run('jump();update(.1)');assert.ok(run('player.y')<430);
+ const airborne=run('player.y');const position=run('camera+player.x');
+ run('canvas.getBoundingClientRect=()=>({width:1200,height:540});resizeGame();draw()');
+ assert.equal(run('W'),1200);assert.equal(run('H'),540);
+ assert.equal(run('player.y'),airborne);assert.equal(run('camera+player.x'),position);
+});
+test('portrait boss arena stays playable and rotation keeps the player in bounds',()=>{
+ const run=game();
+ run('canvas.getBoundingClientRect=()=>({width:390,height:844});resizeGame();start();introduceBoss();startBoss();draw()');
+ assert.equal(run('player.x'),300);
+ run(`for(let i=0;i<6000&&state==='running';i++){
+   const speed=700+boss.dodges*65;
+   if(boss.phase==='charge'&&player.grounded&&Math.abs(boss.x-player.x)<speed*.29+110)jump();
+   update(1/120);
+ }`);
+ assert.equal(run('state'),'won');assert.equal(run('focus'),3);
+ run('canvas.getBoundingClientRect=()=>({width:1200,height:540});resizeGame()');
+ assert.equal(run('player.x'),600);
 });
