@@ -8,7 +8,7 @@ function game(){
  const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',innerHTML:'',style:{},classList:{add(){},remove(){}},setAttribute(){},addEventListener(){}});return nodes.get(id)};
  node('game').getBoundingClientRect=()=>({width:1200,height:540});
  node('game').getContext=()=>new Proxy({},{get:()=>()=>{},set:()=>true});
- const context=vm.createContext({document:{querySelector:s=>node(s.slice(1)),getElementById:node,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},Math:testMath});
+ const context=vm.createContext({document:{querySelector:s=>node(s.slice(1)),getElementById:node,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){},removeEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},Math:testMath});
  vm.runInContext(fs.readFileSync('boss.js','utf8'),context);
  vm.runInContext(fs.readFileSync('game.js','utf8'),context);
  return code=>vm.runInContext(code,context);
@@ -55,4 +55,31 @@ test('opening bounce lands on the first cloud without input across seeds',()=>{
   const run=game();run(`Math.random=()=>${seed}/1000000;start();let bounced=false;for(let i=0;i<90;i++){const vy=player.vy;update(1/120);if(vy>0&&player.vy<0)bounced=true}`);
   assert.equal(run('bounced'),true);
  }
+});
+
+test('tilt calibrates, ignores jitter, steers and lets arrows override it',()=>{
+ const run=game();run('start();tilt.enabled=true;readTilt({gamma:10,beta:30});readTilt({gamma:13,beta:30});update(0)');
+ assert.equal(run('direction'),1);
+ run('readTilt({gamma:0,beta:30});update(0)');assert.equal(run('direction'),-1);
+ run("keys.add('ArrowRight');update(0)");assert.equal(run('direction'),1);
+ run('keys.clear();readTilt({gamma:20,beta:30});update(0)');assert.equal(run('direction'),1);
+ run('stopTilt();readTilt({gamma:-30,beta:30});update(0)');assert.equal(run('direction'),1);
+});
+test('tilt ignores invalid samples and recalibrates on rotation',()=>{
+ const run=game();run('tilt.enabled=true;readTilt({gamma:null,beta:null})');assert.equal(run('tilt.neutral'),null);
+ run('readTilt({gamma:5,beta:20});window.orientation=90;readTilt({gamma:5,beta:20})');assert.equal(run('tilt.lean'),0);
+ run('readTilt({gamma:5,beta:35})');assert.ok(run('tilt.lean')>5);
+});
+test('tilt handles granted, denied and failed permission requests',async()=>{
+ const run=game();run("window.DeviceOrientationEvent={requestPermission:async()=> 'denied'}");
+ await run('toggleTilt()');assert.equal(run('tilt.enabled'),false);
+ run("window.DeviceOrientationEvent.requestPermission=async()=>{throw Error('blocked')}");
+ await run('toggleTilt()');assert.equal(run('tilt.enabled'),false);
+ run("start();window.DeviceOrientationEvent.requestPermission=async()=> 'granted'");
+ await run('toggleTilt()');assert.equal(run('tilt.enabled'),true);assert.equal(run('state'),'paused');
+ await run('toggleTilt()');assert.equal(run('tilt.enabled'),false);
+});
+test('tilt supports phones without permission prompts and unsupported devices',async()=>{
+ const run=game();await run('toggleTilt()');assert.equal(run('tilt.enabled'),false);
+ run('window.DeviceOrientationEvent={}');await run('toggleTilt()');assert.equal(run('tilt.enabled'),true);
 });

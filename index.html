@@ -6,7 +6,7 @@
   <meta name="guestbook-api" content="https://strong-sherbet-334237.netlify.app/api/guestbook">
   <meta name="theme-color" content="#111813">
   <title>Chabad & Weave</title>
-  <link rel="stylesheet" href="style.css?v=endless-1">
+  <link rel="stylesheet" href="style.css?v=tilt-1">
 </head>
 <body>
   <main class="arcade" aria-label="Chabad and Weave game">
@@ -27,7 +27,7 @@
       <div id="overlay" class="overlay">
         <span id="overlay-tag">CHABAD & WEAVE</span>
         <h1 id="overlay-title"><span class="title-line">CHABAD<span class="title-amp">&amp;</span></span><br><span>WEAVE</span></h1>
-        <p id="overlay-text">Bounce higher forever. Run automatically. Steer onto clouds, evade the spaceship, and don’t fall. Tap for an extra jump.</p>
+        <p id="overlay-text">Bounce higher forever. Run automatically. Steer onto clouds, evade the spaceship, and don’t fall. Enable TILT to steer with your phone. Tap for an extra jump.</p>
         <button id="start">START RUN</button>
         <small id="overlay-hint">PRESS SPACE</small>
       </div>
@@ -45,6 +45,7 @@
     <div class="touch-controls" aria-label="Touch controls">
       <button data-key="ArrowLeft" aria-label="Move left">←</button>
       <button data-key="ArrowRight" aria-label="Move right">→</button>
+      <button id="tilt" aria-pressed="false" aria-label="Toggle tilt steering">TILT OFF</button>
       <button data-key="Space">JUMP</button>
     </div>
   </main>
@@ -69,8 +70,8 @@
       <button id="gb-lock" type="button" hidden>Lock admin controls</button>
     </details>
   </section>
-  <script src="boss.js?v=endless-1"></script>
-  <script src="game.js?v=endless-1"></script>
+  <script src="boss.js?v=tilt-1"></script>
+  <script src="game.js?v=tilt-1"></script>
   <script src="guestbook.js?v=4"></script>
 </body>
 </html>

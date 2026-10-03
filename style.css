@@ -244,3 +244,11 @@ kbd { font: inherit; font-weight: bold; }
   .conversation p { padding: 16px; font-size: 24px; text-align: center; }
   #decline { min-height: 48px; font-size: 16px; }
 }
+
+.touch-controls #tilt { width: 68px; font-size: 11px; }
+.touch-controls #tilt[aria-pressed="true"] { background: #526d3b; border-color: #ffd67a; }
+.touch-controls #tilt:disabled { opacity: .6; }
+@media (orientation: portrait) and (max-width: 360px) {
+  .touch-controls button { width: 44px; }
+  .touch-controls button:last-child { width: 76px; }
+}

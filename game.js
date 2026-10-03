@@ -151,9 +151,54 @@ function landOnClouds(previousY){
     tone(420+Math.min(distance,500),.06);
   }
 }
+// Tilt changes the automatic running direction; arrows take priority while held.
+const tilt={enabled:false,neutral:null,angle:null,lean:0,timer:null};
+function stopTilt(){
+  tilt.enabled=false;tilt.neutral=null;tilt.lean=0;
+  clearTimeout(tilt.timer);
+  window.removeEventListener('deviceorientation',readTilt);
+  $('tilt').textContent='TILT OFF';$('tilt').setAttribute('aria-pressed','false');
+}
+function readTilt(event){
+  if(!tilt.enabled||!Number.isFinite(event.gamma)||!Number.isFinite(event.beta))return;
+  const angle=window.screen?.orientation?.angle??window.orientation??0;
+  const radians=angle*Math.PI/180;
+  const lean=event.gamma*Math.cos(radians)+event.beta*Math.sin(radians);
+  if(tilt.neutral===null||tilt.angle!==angle){
+    tilt.neutral=lean;tilt.angle=angle;
+    clearTimeout(tilt.timer);
+    $('tilt').textContent='TILT ON';
+  }
+  tilt.lean=lean-tilt.neutral;
+}
+async function toggleTilt(){
+  if(tilt.enabled){stopTilt();return}
+  const sensor=window.DeviceOrientationEvent;
+  if(!sensor){toast('Tilt unavailable · use the arrows');return}
+  // Permission sheets can interrupt the game, so preserve the run first.
+  if(state==='running')pause();
+  $('tilt').disabled=true;
+  try{
+    if(typeof sensor.requestPermission==='function'&&await sensor.requestPermission()!=='granted'){
+      toast('Tilt permission denied · use the arrows');return;
+    }
+    tilt.enabled=true;tilt.neutral=null;tilt.lean=0;
+    $('tilt').textContent='HOLD STILL';$('tilt').setAttribute('aria-pressed','true');
+    toast('Hold your phone comfortably, then tilt left or right');
+    window.addEventListener('deviceorientation',readTilt);
+    tilt.timer=setTimeout(()=>{
+      if(tilt.enabled&&tilt.neutral===null){stopTilt();toast('No tilt sensor detected · use the arrows')}
+    },4000);
+  }catch{
+    stopTilt();toast('Could not enable tilt · use the arrows');
+  }finally{$('tilt').disabled=false}
+}
+$('tilt').onclick=toggleTilt;
+
 function update(dt){
   if(state!=='running')return;
   tick+=dt;player.flip=Math.max(0,player.flip-dt);
+  if(tilt.enabled&&Math.abs(tilt.lean)>5)direction=Math.sign(tilt.lean);
   if(keys.has('ArrowLeft')||keys.has('KeyA'))direction=-1;
   if(keys.has('ArrowRight')||keys.has('KeyD'))direction=1;
   player.x+=direction*180*dt;
